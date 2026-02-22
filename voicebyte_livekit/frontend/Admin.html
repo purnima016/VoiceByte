@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>VoiceByte Admin — Doctor Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#EEF3FA;
+  --white:#FFFFFF;
+  --blue:#1A56DB;
+  --blue2:#2563EB;
+  --blue-dark:#1E3A8A;
+  --blue-light:#EFF6FF;
+  --green:#16A34A;
+  --green-light:#F0FDF4;
+  --red:#DC2626;
+  --red-light:#FEF2F2;
+  --orange:#D97706;
+  --orange-light:#FFFBEB;
+  --purple:#7C3AED;
+  --purple-light:#F5F3FF;
+  --text:#111827;
+  --text2:#6B7280;
+  --text3:#9CA3AF;
+  --border:#E5E7EB;
+  --border2:#D1D5DB;
+  --shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04);
+  --shadow2:0 4px 16px rgba(0,0,0,0.08);
+  --radius:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
+
+/* ── TOP BAR ── */
+.topbar{
+  background:var(--white);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;height:52px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+  box-shadow:var(--shadow);
+}
+.tl{display:flex;align-items:center;gap:12px;}
+.logo{font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;color:var(--text);}
+.admin-badge{
+  background:var(--blue);color:#fff;
+  font-size:10px;font-weight:700;letter-spacing:0.5px;
+  padding:3px 8px;border-radius:5px;text-transform:uppercase;
+}
+.dash-label{font-size:13px;color:var(--text2);font-weight:500;}
+.tr{display:flex;align-items:center;gap:14px;}
+.live-ind{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text2);font-weight:500;}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#22C55E;box-shadow:0 0 0 3px rgba(34,197,94,0.2);animation:ldot 2s infinite;}
+@keyframes ldot{0%,100%{box-shadow:0 0 0 3px rgba(34,197,94,0.2);}50%{box-shadow:0 0 0 6px rgba(34,197,94,0.08);}}
+.date-lbl{font-size:13px;color:var(--text2);}
+.kiosk-btn{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 14px;border-radius:8px;
+  border:1.5px solid var(--border2);background:var(--white);
+  font-size:13px;font-weight:600;color:var(--text);
+  cursor:pointer;text-decoration:none;transition:all .2s;
+}
+.kiosk-btn:hover{background:var(--blue-light);border-color:var(--blue);color:var(--blue);}
+
+/* ── LAYOUT ── */
+.layout{display:flex;gap:0;height:calc(100vh - 52px);}
+.main{flex:1;overflow-y:auto;padding:20px 20px 20px 20px;}
+.sidebar{width:280px;min-width:280px;background:var(--white);border-left:1px solid var(--border);overflow-y:auto;padding:20px 16px;display:flex;flex-direction:column;gap:20px;}
+
+/* ── STATS ── */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
+.stat{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px 18px;
+  box-shadow:var(--shadow);
+}
+.stat.emerg{background:var(--red-light);border-color:rgba(220,38,38,0.2);}
+.stat-l{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:6px;}
+.stat-v{font-family:'Plus Jakarta Sans',sans-serif;font-size:36px;font-weight:800;line-height:1;color:var(--blue);}
+.stat-v.orange{color:var(--orange);}
+.stat-v.purple{color:var(--purple);}
+.stat-v.green{color:var(--green);}
+.stat-v.red{color:var(--red);}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:4px;}
+
+/* ── FILTER BAR ── */
+.filterbar{
+  display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;
+}
+.ftab{
+  padding:6px 14px;border-radius:20px;
+  border:1.5px solid var(--border);background:var(--white);
+  font-size:13px;font-weight:600;color:var(--text2);
+  cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px;
+}
+.ftab.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+.ftab:hover:not(.active){border-color:var(--border2);color:var(--text);}
+.dept-sel{
+  padding:6px 12px;border-radius:8px;border:1.5px solid var(--border);
+  background:var(--white);font-family:'DM Sans',sans-serif;
+  font-size:13px;color:var(--text);cursor:pointer;outline:none;
+  transition:border-color .2s;
+}
+.dept-sel:focus{border-color:var(--blue);}
+.search-wrap{flex:1;max-width:300px;position:relative;}
+.search-ico{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--text3);}
+.search{
+  width:100%;padding:7px 12px 7px 32px;border-radius:8px;
+  border:1.5px solid var(--border);background:var(--white);
+  font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);
+  outline:none;transition:border-color .2s;
+}
+.search:focus{border-color:var(--blue);}
+.refresh-btn{
+  margin-left:auto;padding:6px 14px;border-radius:8px;
+  border:1.5px solid var(--border);background:var(--white);
+  font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;
+  display:flex;align-items:center;gap:6px;transition:all .2s;
+}
+.refresh-btn:hover{border-color:var(--blue);color:var(--blue);}
+.spin{animation:spin .8s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── TABLE ── */
+.table-card{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+  box-shadow:var(--shadow);
+}
+.tc-head{
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.tc-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;color:var(--text);}
+.tc-count{font-size:12px;color:var(--text3);font-weight:500;}
+
+table{width:100%;border-collapse:collapse;}
+thead tr{background:#F9FAFB;border-bottom:1px solid var(--border);}
+th{
+  padding:10px 14px;text-align:left;
+  font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:0.8px;color:var(--text3);white-space:nowrap;
+}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#F9FAFB;}
+tbody tr.emerg-row{background:var(--red-light);}
+tbody tr.emerg-row:hover{background:#FEE2E2;}
+tbody tr.seen-row{opacity:0.6;}
+td{padding:12px 14px;vertical-align:middle;}
+
+/* token cell */
+.tok{
+  width:36px;height:36px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:15px;
+  flex-shrink:0;
+}
+.tok.wait{background:#FEF3C7;color:#92400E;}
+.tok.called{background:#DBEAFE;color:#1E40AF;}
+.tok.seen{background:#DCFCE7;color:#166534;}
+.tok.emerg{background:#FEE2E2;color:#991B1B;}
+
+.pt-name{font-weight:600;font-size:14px;color:var(--text);}
+.pt-meta{font-size:11px;color:var(--text3);margin-top:1px;}
+
+.mob{font-size:13px;color:var(--text2);font-variant-numeric:tabular-nums;}
+
+.dept-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;}
+.dept-name{font-weight:500;}
+
+.sym-list{display:flex;flex-wrap:wrap;gap:4px;}
+.sym{
+  padding:2px 8px;border-radius:6px;font-size:11px;font-weight:500;
+  background:#F3F4F6;color:var(--text2);
+}
+.sym.red{background:var(--red-light);color:var(--red);}
+
+/* status pills */
+.spill{
+  padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;
+  text-transform:lowercase;display:inline-flex;align-items:center;gap:4px;
+}
+.spill::before{content:'•';font-size:14px;line-height:1;}
+.spill.waiting{background:#FEF3C7;color:#92400E;}
+.spill.waiting::before{color:var(--orange);}
+.spill.called{background:#DBEAFE;color:#1E40AF;}
+.spill.called::before{color:var(--blue);}
+.spill.seen{background:#DCFCE7;color:#166534;}
+.spill.seen::before{color:var(--green);}
+
+.wait-time{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:4px;}
+
+/* action buttons */
+.act-btns{display:flex;gap:6px;align-items:center;}
+.abtn{
+  padding:6px 14px;border-radius:8px;border:none;
+  font-family:'DM Sans',sans-serif;font-weight:700;font-size:12px;
+  cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.abtn.call{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(26,86,219,0.3);}
+.abtn.call:hover{background:var(--blue2);transform:translateY(-1px);}
+.abtn.seen-btn{background:var(--green-light);color:var(--green);border:1.5px solid rgba(22,163,74,0.3);}
+.abtn.seen-btn:hover{background:#DCFCE7;}
+.abtn.recall{background:var(--orange-light);color:var(--orange);border:1.5px solid rgba(217,119,6,0.3);}
+.abtn.recall:hover{background:#FDE68A;}
+.abtn.done{background:#F3F4F6;color:var(--text3);cursor:default;}
+.abtn:disabled{opacity:0.5;cursor:default;transform:none;}
+
+/* empty state */
+.empty{text-align:center;padding:48px;color:var(--text3);}
+.empty-ico{font-size:40px;margin-bottom:12px;}
+
+/* ── SIDEBAR ── */
+/* Call Next Panel */
+.call-panel{
+  background:var(--blue);border-radius:var(--radius);
+  padding:18px;color:#fff;
+}
+.cp-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.cp-sub{font-size:11px;color:rgba(255,255,255,0.7);margin-top:4px;margin-bottom:14px;}
+.cp-dept{
+  width:100%;padding:8px 12px;border-radius:8px;
+  border:1.5px solid rgba(255,255,255,0.25);
+  background:rgba(255,255,255,0.12);color:#fff;
+  font-family:'DM Sans',sans-serif;font-size:13px;
+  outline:none;margin-bottom:12px;cursor:pointer;
+}
+.cp-dept option{color:var(--text);background:var(--white);}
+.call-next-btn{
+  width:100%;padding:12px;border-radius:10px;border:none;
+  background:var(--white);color:var(--blue);
+  font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:15px;
+  cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.call-next-btn:hover{background:#EFF6FF;transform:translateY(-1px);}
+.call-next-btn:disabled{opacity:0.5;cursor:default;transform:none;}
+
+/* Dept Queue */
+.dq-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px;}
+.dq-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 12px;border-radius:10px;margin-bottom:6px;
+  background:var(--bg);border:1px solid var(--border);
+}
+.dq-left{display:flex;align-items:center;gap:8px;}
+.dq-dot{width:8px;height:8px;border-radius:50%;}
+.dq-name{font-size:13px;font-weight:600;color:var(--text);}
+.dq-right{text-align:right;}
+.dq-total{font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:800;color:var(--text);}
+.dq-wait{font-size:10px;color:var(--text3);}
+
+/* toast */
+.toast{
+  position:fixed;bottom:20px;right:20px;z-index:999;
+  background:var(--text);color:#fff;
+  padding:11px 18px;border-radius:10px;font-size:13px;font-weight:500;
+  opacity:0;transition:all .3s;pointer-events:none;
+  box-shadow:0 4px 20px rgba(0,0,0,0.2);
+}
+.toast.show{opacity:1;}
+.toast.ok{background:#16A34A;}
+.toast.err{background:#DC2626;}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="tl">
+    <div class="logo">VoiceByte</div>
+    <div class="admin-badge">ADMIN</div>
+    <div class="dash-label">Doctor Dashboard</div>
+  </div>
+  <div class="tr">
+    <div class="live-ind"><div class="live-dot"></div>Live</div>
+    <div class="date-lbl" id="date-lbl"></div>
+    <a href="http://127.0.0.1:5000" class="kiosk-btn" target="_blank">🖥 Kiosk View</a>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- STATS -->
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-l">Today Total</div>
+        <div class="stat-v" id="s-total">—</div>
+        <div class="stat-sub">Registered patients</div>
+      </div>
+      <div class="stat">
+        <div class="stat-l">Waiting</div>
+        <div class="stat-v orange" id="s-waiting">—</div>
+        <div class="stat-sub">In queue</div>
+      </div>
+      <div class="stat">
+        <div class="stat-l">Called</div>
+        <div class="stat-v purple" id="s-called">—</div>
+        <div class="stat-sub">Being seen</div>
+      </div>
+      <div class="stat">
+        <div class="stat-l">Seen</div>
+        <div class="stat-v green" id="s-seen">—</div>
+        <div class="stat-sub">Completed</div>
+      </div>
+      <div class="stat emerg">
+        <div class="stat-l">🚨 Emergency</div>
+        <div class="stat-v red" id="s-emerg">—</div>
+        <div class="stat-sub">Today</div>
+      </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="filterbar">
+      <button class="ftab active" onclick="setFilter('all',this)">All</button>
+      <button class="ftab" onclick="setFilter('waiting',this)">⏳ Waiting</button>
+      <button class="ftab" onclick="setFilter('called',this)">📢 Called</button>
+      <button class="ftab" onclick="setFilter('seen',this)">✅ Seen</button>
+      <button class="ftab" onclick="setFilter('emergency',this)">🚨 Emergency</button>
+      <select class="dept-sel" id="dept-filter" onchange="renderTable()">
+        <option value="all">All Departments</option>
+        <option value="General Medicine">General Medicine</option>
+        <option value="Cardiology">Cardiology</option>
+        <option value="Neurology">Neurology</option>
+        <option value="Orthopedics">Orthopedics</option>
+        <option value="Pediatrics">Pediatrics</option>
+        <option value="Gynecology">Gynecology</option>
+        <option value="Emergency">Emergency</option>
+      </select>
+      <div class="search-wrap">
+        <span class="search-ico">🔍</span>
+        <input class="search" id="search" type="text" placeholder="Search name or mobile…" oninput="renderTable()"/>
+      </div>
+      <button class="refresh-btn" id="refresh-btn" onclick="loadData()">↻ Refresh</button>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-card">
+      <div class="tc-head">
+        <div class="tc-title">Patient Queue</div>
+        <div class="tc-count" id="tc-count">—</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Token</th>
+              <th>Patient</th>
+              <th>Mobile</th>
+              <th>Department</th>
+              <th>Symptoms</th>
+              <th>Status</th>
+              <th>Waited</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr><td colspan="8"><div class="empty"><div class="empty-ico">⏳</div><div>Loading…</div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- Call Next Panel -->
+    <div class="call-panel">
+      <div class="cp-title">📢 Call Next Patient</div>
+      <div class="cp-sub">Sends SMS automatically to patient's mobile</div>
+      <select class="cp-dept" id="call-dept">
+        <option value="all">All Departments</option>
+        <option value="General Medicine">General Medicine</option>
+        <option value="Cardiology">Cardiology</option>
+        <option value="Neurology">Neurology</option>
+        <option value="Orthopedics">Orthopedics</option>
+        <option value="Pediatrics">Pediatrics</option>
+        <option value="Gynecology">Gynecology</option>
+        <option value="Emergency">Emergency</option>
+      </select>
+      <button class="call-next-btn" id="call-next-btn" onclick="callNext()">
+        📢 Call Next Token
+      </button>
+    </div>
+
+    <!-- Department Queue -->
+    <div>
+      <div class="dq-title">Department Queue</div>
+      <div id="dept-queue">
+        <div style="color:var(--text3);font-size:13px;text-align:center;padding:20px;">Loading…</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const BACKEND = 'http://127.0.0.1:5000';
+let allPatients = [];
+let currentFilter = 'all';
+
+const DEPT_COLORS = {
+  'Emergency':       '#DC2626',
+  'General Medicine':'#16A34A',
+  'Neurology':       '#7C3AED',
+  'Cardiology':      '#2563EB',
+  'Orthopedics':     '#0891B2',
+  'Pediatrics':      '#D97706',
+  'Gynecology':      '#DB2777',
+};
+
+// Date display
+const now = new Date();
+document.getElementById('date-lbl').textContent =
+  now.toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short'}) +
+  ' ' + now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+
+// ── LOAD DATA ──
+async function loadData(){
+  const rbtn = document.getElementById('refresh-btn');
+  rbtn.innerHTML = '<span class="spin">↻</span> Refresh';
+  try{
+    const [qRes,sRes] = await Promise.all([
+      fetch(BACKEND+'/admin/queue'),
+      fetch(BACKEND+'/admin/stats')
+    ]);
+    allPatients = await qRes.json();
+    const stats = await sRes.json();
+
+    document.getElementById('s-total').textContent   = stats.total   ?? 0;
+    document.getElementById('s-waiting').textContent = stats.waiting ?? 0;
+    document.getElementById('s-called').textContent  = stats.called  ?? 0;
+    document.getElementById('s-seen').textContent    = stats.seen    ?? 0;
+    document.getElementById('s-emerg').textContent   = stats.emergencies ?? 0;
+
+    renderTable();
+    renderDeptQueue();
+  } catch(e){
+    showToast('❌ Cannot reach backend','err');
+  }
+  rbtn.innerHTML = '↻ Refresh';
+}
+
+// ── FILTER ──
+function setFilter(f, btn){
+  currentFilter = f;
+  document.querySelectorAll('.ftab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+// ── TIME AGO ──
+function timeAgo(ts){
+  if(!ts) return '—';
+  const diff = Math.floor((Date.now() - new Date(ts).getTime())/1000);
+  if(diff < 60) return diff+'s ago';
+  const m = Math.floor(diff/60);
+  if(m < 60) return m+'m ago';
+  const h = Math.floor(m/60), rm = m%60;
+  return h+'h '+(rm>0?rm+'m ':' ')+'ago';
+}
+
+// ── RENDER TABLE ──
+function renderTable(){
+  const search = document.getElementById('search').value.toLowerCase();
+  const deptF  = document.getElementById('dept-filter').value;
+
+  let rows = allPatients.filter(p=>{
+    if(currentFilter==='waiting'   && p.status!=='waiting')  return false;
+    if(currentFilter==='called'    && p.status!=='called')   return false;
+    if(currentFilter==='seen'      && p.status!=='seen')     return false;
+    if(currentFilter==='emergency' && !p.emergency)          return false;
+    if(deptF!=='all' && p.department!==deptF)                return false;
+    if(search && !p.name.toLowerCase().includes(search) &&
+       !(p.mobile||'').includes(search) &&
+       !String(p.token_number||'').includes(search)) return false;
+    return true;
+  });
+
+  document.getElementById('tc-count').textContent = rows.length+' patients';
+
+  const tbody = document.getElementById('tbody');
+  if(!rows.length){
+    tbody.innerHTML=`<tr><td colspan="8"><div class="empty"><div class="empty-ico">🏥</div><div>No patients found</div></div></td></tr>`;
+    return;
+  }
+
+  const isEmerg = p => p.emergency===1||p.emergency===true;
+  const isSeen  = p => p.status==='seen';
+  const isCalled= p => p.status==='called';
+
+  tbody.innerHTML = rows.map(p=>{
+    const emerg = isEmerg(p);
+    const seen  = isSeen(p);
+    const called= isCalled(p);
+    const dcolor= DEPT_COLORS[p.department]||'#6B7280';
+    const syms  = (p.symptoms_keywords||'').split(',').filter(Boolean);
+    const tokCls= emerg?'emerg':seen?'seen':called?'called':'wait';
+
+    // Action buttons
+    let actionHtml = '';
+    if(seen){
+      actionHtml = `<button class="abtn done" disabled>✅ Done</button>`;
+    } else if(called){
+      actionHtml = `
+        <button class="abtn seen-btn" onclick="markSeen(${p.id},${p.token_number||0})">✅ Seen</button>
+        <button class="abtn recall" onclick="recallPatient(${p.id},${p.token_number||0})">🔔 Recall</button>`;
+    } else {
+      actionHtml = `<button class="abtn call" onclick="callPatient(${p.id},${p.token_number||0},'${esc(p.department||'')}')">📢 Call</button>`;
+    }
+
+    return `<tr class="${emerg?'emerg-row':''} ${seen?'seen-row':''}">
+      <td><div class="tok ${tokCls}">${p.token_number||'?'}</div></td>
+      <td>
+        <div class="pt-name">${esc(p.name||'—')}</div>
+        <div class="pt-meta">${esc(p.age||'?')} yrs · ${esc(p.language||'EN')}</div>
+      </td>
+      <td class="mob">${esc(p.mobile||'—')}</td>
+      <td>
+        <span class="dept-dot" style="background:${dcolor}"></span>
+        <span class="dept-name">${esc(p.department||'—')}</span>
+      </td>
+      <td>
+        <div class="sym-list">
+          ${syms.slice(0,3).map(s=>`<span class="sym ${emerg?'red':''}">${esc(s.trim())}</span>`).join('')}
+          ${syms.length>3?`<span class="sym">+${syms.length-3}</span>`:''}
+          ${!syms.length?`<span style="color:var(--text3);font-size:12px;">—</span>`:''}
+        </div>
+      </td>
+      <td><span class="spill ${p.status||'waiting'}">${p.status||'waiting'}</span></td>
+      <td><div class="wait-time">🕐 ${timeAgo(p.visit_time)}</div></td>
+      <td><div class="act-btns">${actionHtml}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── DEPT QUEUE SIDEBAR ──
+function renderDeptQueue(){
+  const depts = {};
+  allPatients.forEach(p=>{
+    const d = p.department||'Other';
+    if(!depts[d]) depts[d]={total:0,waiting:0};
+    depts[d].total++;
+    if(p.status==='waiting') depts[d].waiting++;
+  });
+
+  const sorted = Object.entries(depts).sort((a,b)=>b[1].waiting-a[1].waiting);
+  if(!sorted.length){
+    document.getElementById('dept-queue').innerHTML=`<div style="color:var(--text3);font-size:13px;text-align:center;padding:16px;">No patients today</div>`;
+    return;
+  }
+
+  document.getElementById('dept-queue').innerHTML = sorted.map(([d,info])=>`
+    <div class="dq-item">
+      <div class="dq-left">
+        <div class="dq-dot" style="background:${DEPT_COLORS[d]||'#6B7280'}"></div>
+        <div class="dq-name">${esc(d)}</div>
+      </div>
+      <div class="dq-right">
+        <div class="dq-total">${info.total}</div>
+        <div class="dq-wait">${info.waiting} waiting</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── CALL PATIENT (individual) ──
+async function callPatient(id, token, dept){
+  try{
+    const res  = await fetch(BACKEND+'/admin/call',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id})
+    });
+    const data = await res.json();
+    if(data.ok){
+      showToast(`📢 Token ${token} called! ${data.sms_sent?'SMS sent ✓':''}`, 'ok');
+      setTimeout(loadData, 600);
+    } else {
+      // Fallback to /admin/seen if /admin/call not available
+      markCalled(id, token);
+    }
+  } catch(e){ markCalled(id, token); }
+}
+
+async function markCalled(id, token){
+  try{
+    const res = await fetch(BACKEND+'/admin/seen',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id})
+    });
+    const data = await res.json();
+    if(data.ok){
+      showToast(`📢 Token ${token} called! ${data.sms_sent?'SMS sent ✓':''}`, 'ok');
+      setTimeout(loadData, 600);
+    }
+  } catch(e){ showToast('❌ Backend error','err'); }
+}
+
+async function markSeen(id, token){
+  try{
+    await fetch(BACKEND+'/admin/seen',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id})
+    });
+    showToast(`✅ Token ${token} marked as Seen`,'ok');
+    setTimeout(loadData,600);
+  } catch(e){ showToast('❌ Error','err'); }
+}
+
+async function recallPatient(id, token){
+  showToast(`🔔 Recalling Token ${token}…`,'ok');
+  // Re-send SMS by calling seen again (triggers SMS)
+  try{
+    await fetch(BACKEND+'/admin/seen',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id})
+    });
+    showToast(`🔔 Token ${token} recalled — SMS sent again`,'ok');
+    setTimeout(loadData,600);
+  } catch(e){ showToast('❌ Error','err'); }
+}
+
+// ── CALL NEXT (sidebar) ──
+async function callNext(){
+  const dept = document.getElementById('call-dept').value;
+  // Find next waiting patient in selected dept
+  const next = allPatients.find(p=>{
+    if(p.status!=='waiting') return false;
+    if(dept!=='all' && p.department!==dept) return false;
+    return true;
+  });
+  if(!next){
+    showToast('No waiting patients'+(dept!=='all'?' in '+dept:''),'err');
+    return;
+  }
+  const btn = document.getElementById('call-next-btn');
+  btn.disabled=true; btn.textContent='Calling…';
+  await callPatient(next.id, next.token_number, next.department);
+  btn.disabled=false; btn.innerHTML='📢 Call Next Token';
+}
+
+// ── HELPERS ──
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast show'+(type?' '+type:'');
+  setTimeout(()=>t.className='toast',3500);
+}
+
+// ── INIT ──
+loadData();
+setInterval(loadData, 10000);
+setInterval(()=>{
+  const now=new Date();
+  document.getElementById('date-lbl').textContent=
+    now.toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short'})+
+    ' '+now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+},60000);
+</script>
+</body>
+</html>

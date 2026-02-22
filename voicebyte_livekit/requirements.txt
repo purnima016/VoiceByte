@@ -1,0 +1,22 @@
+# VoiceByte LiveKit Edition — Requirements
+# Run: pip install -r requirements.txt
+
+# LiveKit Agent framework
+livekit-agents[groq,google]~=1.3
+livekit-plugins-noise-cancellation~=0.2
+
+# Web framework (Flask backend)
+flask
+flask-cors
+
+# Groq SDK (for LLM NLP extraction)
+groq
+
+# Async HTTP (agent calls Flask backend)
+aiohttp
+
+# Env management
+python-dotenv
+
+# LiveKit server SDK (for token generation)
+livekit-api

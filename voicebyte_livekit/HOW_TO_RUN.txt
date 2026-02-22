@@ -1,0 +1,109 @@
+========================================
+  VoiceByte LiveKit Edition — HOW TO RUN
+========================================
+
+ARCHITECTURE:
+  Browser (mic) ──► LiveKit Cloud ──► Agent (Groq Whisper STT)
+                                           │
+                                      Groq LLaMA NLP
+                                           │
+                                      Flask Backend (saves to DB)
+                                           │
+                                      Browser (shows receipt)
+
+WHY IT'S FASTER:
+  • Old way: Browser → Web Speech API (slow, English-biased, network dependent)
+  • New way: Browser → LiveKit → Groq Whisper (fastest STT available, truly multilingual)
+  • Groq Whisper processes audio in ~300ms vs 1-2 seconds for browser Speech API
+
+────────────────────────────────────────
+STEP 1 — Add your API Keys
+────────────────────────────────────────
+Open the .env file and fill in:
+
+  GROQ_API_KEY=your_groq_key_here
+  
+  Get FREE Groq key from: https://console.groq.com
+  (The LiveKit keys are already filled in from your account)
+
+────────────────────────────────────────
+STEP 2 — Install Dependencies
+────────────────────────────────────────
+In terminal:
+
+  pip install -r requirements.txt
+
+────────────────────────────────────────
+STEP 3 — Run Flask Backend (Terminal 1)
+────────────────────────────────────────
+  cd backend
+  python app.py
+
+  ✅ Should say: "VoiceByte LiveKit backend started!"
+  🌐 Runs at: http://127.0.0.1:5000
+
+────────────────────────────────────────
+STEP 4 — Run LiveKit Agent (Terminal 2)
+────────────────────────────────────────
+  cd agent
+  python agent.py dev
+
+  ✅ Should say: "Starting worker..." and connect to LiveKit Cloud
+  
+  NOTE: Both .env files must be in the same folder as your scripts,
+  OR set the GROQ_API_KEY environment variable.
+
+────────────────────────────────────────
+STEP 5 — Open Browser
+────────────────────────────────────────
+  http://127.0.0.1:5000
+  
+  Use Google Chrome (best mic support)
+  Allow microphone when asked
+
+────────────────────────────────────────
+HOW THE VOICE FLOW WORKS:
+────────────────────────────────────────
+1. Patient clicks "Start Voice Registration"
+2. Browser connects to LiveKit room
+3. AI Agent auto-joins the same room
+4. Agent speaks greeting (in browser via Web Speech)
+5. Patient speaks → LiveKit streams audio to Agent
+6. Groq Whisper transcribes in ~300ms
+7. Groq LLaMA extracts: name, age, mobile, symptoms, days
+8. Agent confirms each field in patient's detected language
+9. Flask saves to SQLite DB + maps department
+10. Agent announces department + floor
+11. Browser shows receipt card
+
+────────────────────────────────────────
+SUPPORTED LANGUAGES:
+────────────────────────────────────────
+  • English
+  • Hindi (हिंदी)
+  • Telugu (తెలుగు)
+  • Tamil (தமிழ்)
+  • Malayalam (മലയാളം)
+
+────────────────────────────────────────
+VIEW PATIENTS DATABASE:
+────────────────────────────────────────
+  http://127.0.0.1:5000/patients
+
+────────────────────────────────────────
+TROUBLESHOOTING:
+────────────────────────────────────────
+❌ Agent not joining?
+   → Check LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET in .env
+   → Make sure agent.py is running (Terminal 2)
+
+❌ No speech/STT?
+   → Check GROQ_API_KEY is valid at console.groq.com
+   → Check browser mic permission (allow when asked)
+
+❌ Flask error?
+   → Make sure pip install -r requirements.txt ran successfully
+   → Check GROQ_API_KEY in .env
+
+❌ Token error?
+   → The livekit-api package needs to be installed: pip install livekit-api
