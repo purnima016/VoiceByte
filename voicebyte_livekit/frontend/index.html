@@ -1018,53 +1018,40 @@ function userMsg(t){
 // ── TTS ──
 let curAudio=null;
 // ── TTS using browser SpeechSynthesis (works on HTTPS, no autoplay block) ──
-// ── TTS: gTTS backend for ALL languages ──
-let curAudioEl = null;
-let _audioUnlocked = false;
-let _unlockAudio = null;
+// ── TTS: Browser SpeechSynthesis ──
+var _synth = window.speechSynthesis;
 
-// Create silent audio to unlock autoplay on first user tap
-function unlockAudioOnTap(){
-  if(_audioUnlocked) return;
-  try{
-    var a = new Audio();
-    a.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
-    a.play().then(function(){ _audioUnlocked=true; }).catch(function(){ _audioUnlocked=true; });
-  }catch(e){ _audioUnlocked=true; }
-}
+var SYNTH_LANG = {
+  'English':   'en-IN',
+  'Hindi':     'hi-IN',
+  'Tamil':     'ta-IN',
+  'Malayalam': 'ml-IN',
+  'Telugu':    'te-IN'
+};
+
+// Load voices as early as possible
+if(_synth){ _synth.getVoices(); }
+if(_synth){ _synth.onvoiceschanged = function(){ _synth.getVoices(); }; }
 
 function speak(text, lang, cb){
   if(!text){if(cb)cb();return;}
   stopAudio();
-  var _done=false;
-  var done=function(){ if(_done)return; _done=true; curAudioEl=null; if(cb)cb(); };
-
-  fetch(BACKEND+'/tts',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({text:text, lang:lang})
-  })
-  .then(function(r){ return r.blob(); })
-  .then(function(blob){
-    var url = URL.createObjectURL(blob);
-    var a   = new Audio(url);
-    curAudioEl = a;
-    a.onended = function(){ URL.revokeObjectURL(url); done(); };
-    a.onerror = function(){ URL.revokeObjectURL(url); done(); };
-    var p = a.play();
-    if(p !== undefined){
-      p.catch(function(){
-        // Autoplay blocked — still continue to next question
-        URL.revokeObjectURL(url);
-        done();
-      });
-    }
-  })
-  .catch(function(){ done(); });
+  if(!_synth){if(cb)cb();return;}
+  _synth.cancel();
+  var utt = new SpeechSynthesisUtterance(text);
+  utt.lang   = SYNTH_LANG[lang] || 'en-IN';
+  utt.rate   = 0.88;
+  utt.pitch  = 1.0;
+  utt.volume = 1.0;
+  var _d = false;
+  var done = function(){ if(_d)return; _d=true; if(cb)cb(); };
+  utt.onend   = done;
+  utt.onerror = done;
+  setTimeout(function(){ _synth.speak(utt); }, 150);
 }
 
 function stopAudio(){
-  if(curAudioEl){ curAudioEl.pause(); curAudioEl.src=''; curAudioEl=null; }
+  if(_synth) _synth.cancel();
 }
 
 // ── STEP UI ──
@@ -1495,7 +1482,11 @@ if(window.speechSynthesis){
 }
 
 document.getElementById('startBtn').addEventListener('click', function(){
-  unlockAudioOnTap(); // unlock Chrome autoplay on first tap
+  // Warm up SpeechSynthesis on first user tap
+  if(window.speechSynthesis){
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.getVoices();
+  }
   startDetect();
 });
 
