@@ -1028,7 +1028,14 @@ function speak(text,lang,cb){
     let _done=false;
     const done=()=>{if(_done)return;_done=true;URL.revokeObjectURL(url);curAudio=null;if(cb)cb();};
     a.onended=done; a.onerror=done;
-    a.play().catch(()=>{curAudio=null;done();});
+    // Force play with user gesture context
+    const playPromise = a.play();
+    if(playPromise !== undefined){
+      playPromise.catch(()=>{
+        // Autoplay blocked — skip audio, still call callback so questions continue
+        curAudio=null; done();
+      });
+    }
   })
   .catch(()=>{if(cb)cb();});
 }
@@ -1444,7 +1451,17 @@ function resetAll(){
   show('sw');
 }
 
-document.getElementById('startBtn').addEventListener('click',startDetect);
+document.getElementById('startBtn').addEventListener('click', async function(){
+  // Unlock audio on first tap — required by Chrome on HTTPS
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const buf = ctx.createBuffer(1,1,22050);
+    const src = ctx.createBufferSource();
+    src.buffer = buf; src.connect(ctx.destination); src.start(0);
+    await ctx.resume();
+  }catch(e){}
+  startDetect();
+});
 
 // Ping backend on load — shows splash if Render is waking up
 (async function pingBackend(){
