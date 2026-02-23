@@ -1018,8 +1018,20 @@ function userMsg(t){
 // ── TTS ──
 let curAudio=null;
 // ── TTS using browser SpeechSynthesis (works on HTTPS, no autoplay block) ──
-// ── TTS: use gTTS backend for ALL languages (works on Render HTTPS) ──
+// ── TTS: gTTS backend for ALL languages ──
 let curAudioEl = null;
+let _audioUnlocked = false;
+let _unlockAudio = null;
+
+// Create silent audio to unlock autoplay on first user tap
+function unlockAudioOnTap(){
+  if(_audioUnlocked) return;
+  try{
+    var a = new Audio();
+    a.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    a.play().then(function(){ _audioUnlocked=true; }).catch(function(){ _audioUnlocked=true; });
+  }catch(e){ _audioUnlocked=true; }
+}
 
 function speak(text, lang, cb){
   if(!text){if(cb)cb();return;}
@@ -1039,7 +1051,14 @@ function speak(text, lang, cb){
     curAudioEl = a;
     a.onended = function(){ URL.revokeObjectURL(url); done(); };
     a.onerror = function(){ URL.revokeObjectURL(url); done(); };
-    a.play().catch(function(){ done(); });
+    var p = a.play();
+    if(p !== undefined){
+      p.catch(function(){
+        // Autoplay blocked — still continue to next question
+        URL.revokeObjectURL(url);
+        done();
+      });
+    }
   })
   .catch(function(){ done(); });
 }
@@ -1476,7 +1495,7 @@ if(window.speechSynthesis){
 }
 
 document.getElementById('startBtn').addEventListener('click', function(){
-  if(window.speechSynthesis) window.speechSynthesis.getVoices();
+  unlockAudioOnTap(); // unlock Chrome autoplay on first tap
   startDetect();
 });
 
