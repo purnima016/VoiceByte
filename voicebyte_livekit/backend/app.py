@@ -80,7 +80,7 @@ def send_sms(mobile, mtype, token, dept, floor, lang="English"):
     try:
         l   = lang if lang in SMS_TPL[mtype] else "English"
         msg = SMS_TPL[mtype][l].format(t=token,d=dept,f=floor)
-        data = _json.dumps({"route":"v3","message":msg,"language":"english","flash":0,"numbers":str(mobile)[-10:]}).encode()
+        data = _json.dumps({"route":"q","message":msg,"language":"english","flash":0,"numbers":str(mobile)[-10:]}).encode()
         req  = urllib.request.Request("https://www.fast2sms.com/dev/bulkV2",data=data,
                headers={"authorization":FAST2SMS_KEY,"Content-Type":"application/json"})
         urllib.request.urlopen(req,timeout=6)
@@ -312,26 +312,135 @@ def extract_age_from_text(text):
 #  DEPARTMENT MAPPING
 # ─────────────────────────────
 DEPTS = {
-    'Cardiology':       {'floor':2,'words':['chest','heart','bp','palpitation','cardiac','blood pressure'],'doctor':'Dr. Rajesh Kumar','fw':'Second Floor'},
-    'Neurology':        {'floor':3,'words':['head','brain','seizure','migraine','dizzy','dizziness','stroke','nerve'],'doctor':'Dr. Priya Sharma','fw':'Third Floor'},
-    'Orthopedics':      {'floor':1,'words':['bone','fracture','knee','back','leg','arm','joint','spine','shoulder'],'doctor':'Dr. Anil Verma','fw':'First Floor'},
-    'Pediatrics':       {'floor':2,'words':['child','baby','infant','vaccination','kid','toddler'],'doctor':'Dr. Sunita Rao','fw':'Second Floor'},
-    'Gynecology':       {'floor':3,'words':['pregnancy','menstrual','period','female','gynec','uterus'],'doctor':'Dr. Meena Pillai','fw':'Third Floor'},
-    'General Medicine': {'floor':1,'words':['fever','cough','cold','infection','weakness','fatigue','viral','flu','pain','stomach','body','vomit','nausea','headache'],'doctor':'Dr. Suresh Nair','fw':'First Floor'},
-    'Emergency':        {'floor':0,'words':['emergency','severe','accident','bleeding','unconscious','trauma','heart attack','stroke'],'doctor':'Emergency Team','fw':'Ground Floor'},
+    'Cardiology': {
+        'floor':2,'fw':'Second Floor','doctor':'Dr. Rajesh Kumar','color':'#D92D20',
+        'words':['chest pain','heart pain','heart attack','cardiac','palpitation',
+                 'blood pressure','high bp','low bp','chest tightness','chest heaviness',
+                 'arm numbness','heart failure','heart blockage','angina',
+                 'cholesterol','hypertension','chest','heart','bp']
+    },
+    'Neurology': {
+        'floor':3,'fw':'Third Floor','doctor':'Dr. Priya Sharma','color':'#7C3AED',
+        'words':['seizure','epilepsy','paralysis','stroke','memory loss','migraine',
+                 'numbness','trembling','nerve pain','brain pressure','vision problem',
+                 'speech difficulty','dizziness','unconscious','fainting','brain','nerve']
+    },
+    'Orthopedics': {
+        'floor':1,'fw':'First Floor','doctor':'Dr. Anil Verma','color':'#0369A1',
+        'words':['fracture','bone','joint pain','knee pain','back pain','shoulder pain',
+                 'hip pain','neck pain','spine','ankle','wrist','elbow','arthritis',
+                 'muscle pain','ligament','disc','knee','back','shoulder','leg pain',
+                 'hand pain','arm pain','foot pain','lower back']
+    },
+    'Pediatrics': {
+        'floor':2,'fw':'Second Floor','doctor':'Dr. Sunita Rao','color':'#D97706',
+        'words':['child','baby','infant','toddler','kid','vaccination','newborn',
+                 'growth problem','childhood','pediatric']
+    },
+    'Gynecology': {
+        'floor':3,'fw':'Third Floor','doctor':'Dr. Meena Pillai','color':'#DB2777',
+        'words':['pregnancy','menstrual pain','irregular periods','vaginal discharge',
+                 'breast pain','uterus','ovary','gynec','female problem','periods',
+                 'menstruation','pregnancy complication','period']
+    },
+    'General Medicine': {
+        'floor':1,'fw':'First Floor','doctor':'Dr. Suresh Nair','color':'#059669',
+        'words':['fever','cough','cold','viral','flu','infection','weakness','fatigue',
+                 'body pain','vomiting','nausea','diarrhea','constipation','acidity',
+                 'gas','loss of appetite','headache','stomach pain','throat pain',
+                 'eye pain','ear pain','skin rash','itching','allergy','diabetes',
+                 'thyroid','anaemia','weight loss','swelling','jaundice','malaria',
+                 'dengue','typhoid','tuberculosis','asthma','breathlessness',
+                 'kidney problem','kidney stone','urinary problem','liver problem',
+                 'stomach','throat','sore throat']
+    },
+    'Emergency': {
+        'floor':0,'fw':'Ground Floor','doctor':'Emergency Team','color':'#DC2626',
+        'words':['emergency','severe','accident','heavy bleeding','unconscious',
+                 'trauma','heart attack','stroke','cannot breathe','breathing difficulty',
+                 'cardiac arrest','coughing blood','blood in urine','injury']
+    },
 }
 EM_WORDS = ['chest pain','heart attack','heavy bleeding','unconscious','seizure',
             'severe pain','accident','trauma','stroke','cannot breathe','breathing difficulty']
 
-def map_department(symptoms, emergency):
+def map_departments(symptoms, emergency):
+    """
+    Uses Groq AI to determine departments like a real doctor would.
+    Understands symptom relationships — fever+leg pain = General Medicine not Orthopedics.
+    Returns (primary_dept, primary_info, all_depts_list)
+    """
     if emergency:
-        return 'Emergency', DEPTS['Emergency']
+        return 'Emergency', DEPTS['Emergency'], [{'name':'Emergency','floor':0,'fw':'Ground Floor','doctor':'Emergency Team','color':'#DC2626'}]
+
     lower = symptoms.lower()
-    for dept, info in DEPTS.items():
-        for word in info['words']:
-            if word in lower:
-                return dept, info
-    return 'General Medicine', DEPTS['General Medicine']
+    for w in EM_WORDS:
+        if w in lower:
+            return 'Emergency', DEPTS['Emergency'], [{'name':'Emergency','floor':0,'fw':'Ground Floor','doctor':'Emergency Team','color':'#DC2626'}]
+
+    dept_list = [d for d in DEPTS.keys() if d != 'Emergency']
+
+    prompt = f"""You are a hospital triage doctor. A patient has these symptoms: "{symptoms}"
+
+Available departments: {', '.join(dept_list)}
+
+Rules:
+- Fever with body pain/leg pain/headache = General Medicine (viral fever, dengue, malaria)
+- Chest pain, palpitation, BP issues, arm numbness = Cardiology
+- Seizure, stroke, paralysis, memory loss, severe headache with vomiting = Neurology
+- Bone fracture, joint pain, knee/back/shoulder pain WITHOUT fever = Orthopedics
+- Pregnancy, periods, female reproductive issues = Gynecology
+- Child/baby/infant patients = Pediatrics
+- Everything else = General Medicine
+- If symptoms belong to 2 different departments genuinely (e.g. knee fracture + chest pain) list both
+- Maximum 2 departments
+
+Respond ONLY with department names separated by comma. Nothing else.
+Example: Cardiology
+Example: General Medicine, Orthopedics"""
+
+    try:
+        raw = ask_groq(prompt, symptoms)
+        # Parse response
+        chosen = [d.strip() for d in raw.split(',')]
+        # Validate — only accept known dept names
+        valid = [d for d in chosen if d in DEPTS]
+        if not valid:
+            valid = ['General Medicine']
+    except Exception:
+        # Fallback to keyword scoring if Groq fails
+        valid = ['General Medicine']
+        scores = {}
+        for dept, info in DEPTS.items():
+            if dept == 'Emergency': continue
+            score = sum(len(w.split()) for w in info['words'] if w in lower)
+            if score > 0: scores[dept] = score
+        if scores:
+            valid = [max(scores, key=scores.get)]
+
+    # Build response
+    all_depts = []
+    for dept_name in valid:
+        if dept_name not in DEPTS: continue
+        info = DEPTS[dept_name]
+        all_depts.append({
+            'name': dept_name,
+            'floor': info['floor'],
+            'fw': info['fw'],
+            'doctor': info['doctor'],
+            'color': info.get('color','#1252A3')
+        })
+
+    if not all_depts:
+        gm = DEPTS['General Medicine']
+        all_depts = [{'name':'General Medicine','floor':gm['floor'],'fw':gm['fw'],'doctor':gm['doctor'],'color':gm['color']}]
+
+    primary = all_depts[0]['name']
+    return primary, DEPTS[primary], all_depts
+
+def map_department(symptoms, emergency):
+    p, info, _ = map_departments(symptoms, emergency)
+    return p, info
 
 # ─────────────────────────────
 #  TTS ENDPOINT — uses gTTS
@@ -1007,7 +1116,7 @@ def process():
             emergency = True
             break
 
-    dept_name, dept_info = map_department(symptoms, emergency)
+    dept_name, dept_info, all_depts = map_departments(symptoms, emergency)
     keywords  = [k.strip() for k in symptoms.split(',') if k.strip()]
     priority  = 'High' if emergency else 'Normal'
 
@@ -1020,7 +1129,8 @@ def process():
     return jsonify({
         'department':dept_name,'floor':dept_info['floor'],'floorWord':dept_info['fw'],
         'doctor':dept_info['doctor'],'keywords':keywords,'days':days,
-        'priority':priority,'registration_number':reg_no,'emergency':emergency,'token_number':token
+        'priority':priority,'registration_number':reg_no,'emergency':emergency,
+        'token_number':token,'all_departments':all_depts
     })
 
 # ─────────────────────────────
@@ -1120,4 +1230,4 @@ if __name__ == '__main__':
     print("")
     print("📦 Make sure gTTS is installed:")
     print("   pip install gtts")
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)

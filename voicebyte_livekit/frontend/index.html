@@ -855,6 +855,11 @@ body{
         <div class="rflw" id="r-flw">First Floor</div>
       </div>
     </div>
+    <!-- Multiple departments section -->
+    <div id="r-multidept" style="display:none;margin:10px 0;padding:10px;background:#f0f4ff;border-radius:10px;border-left:4px solid #3B82F6;">
+      <div style="font-size:11px;font-weight:700;color:#1252A3;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">📋 Also Visit</div>
+      <div id="r-multidept-list"></div>
+    </div>
     <div class="rtoken">
       <div>
         <div class="rtoken-l">🎫 Token Number</div>
@@ -893,7 +898,10 @@ body{
 <div class="toast" id="toast"></div>
 
 <script>
-const BACKEND = 'https://voicebyte.onrender.com';
+// Auto-detect backend URL — works both locally and on Render
+const BACKEND = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')
+  ? 'http://127.0.0.1:5000'
+  : window.location.origin;  // On Render: uses same server URL automatically
 
 // Soundwave toggle
 function setSoundwave(on){ document.getElementById('soundwave').classList.toggle('on', on); }
@@ -979,7 +987,7 @@ function digits(t){
 }
 
 const S={lang:'English',step:0,name:'',age:'',mobile:'',symptoms:'',days:'',
-  department:'',floor:1,floorWord:'',doctor:'',keywords:[],emergency:false,reg:''};
+  department:'',floor:1,floorWord:'',doctor:'',keywords:[],emergency:false,reg:'',all_departments:[]};
 
 // ── UTILS ──
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
@@ -1017,9 +1025,10 @@ function speak(text,lang,cb){
   .then(blob=>{
     const url=URL.createObjectURL(blob);
     const a=new Audio(url);curAudio=a;
-    a.onended=()=>{URL.revokeObjectURL(url);curAudio=null;if(cb)cb();};
-    a.onerror=()=>{URL.revokeObjectURL(url);curAudio=null;if(cb)cb();};
-    a.play().catch(()=>{curAudio=null;if(cb)cb();});
+    let _done=false;
+    const done=()=>{if(_done)return;_done=true;URL.revokeObjectURL(url);curAudio=null;if(cb)cb();};
+    a.onended=done; a.onerror=done;
+    a.play().catch(()=>{curAudio=null;done();});
   })
   .catch(()=>{if(cb)cb();});
 }
@@ -1131,8 +1140,11 @@ function startIntake(){
   setTimeout(()=>askStep(0),300);
 }
 
+let _stepLock=-1;
 function askStep(idx){
-  if(idx>=KEYS.length){showConfirm();return;}
+  if(idx>=KEYS.length){_stepLock=-1;showConfirm();return;}
+  if(_stepLock===idx)return; // prevent duplicate for same step
+  _stepLock=idx;
   S.step=idx;
   stepUI(idx,'active');
   updateProgress(idx);
@@ -1309,13 +1321,13 @@ function accept(idx,val){
   const cm=(CLANG[key]||{})[S.lang]||(CLANG[key]||{})['English']||'Recorded';
   if(key==='mobile'){
     botMsg('✅ '+cm);
-    speak(cm, S.lang, ()=>{ stepUI(idx,'done'); askStep(idx+1); });
+    speak(cm, S.lang, ()=>{ stepUI(idx,'done'); _stepLock=-1; askStep(idx+1); });
   } else if(key==='symptoms'){
     botMsg('✅ <span style="font-size:12px;color:var(--text2)">'+val+'</span><br><b>'+cm+'</b>');
-    speak(cm, S.lang, ()=>{ stepUI(idx,'done'); askStep(idx+1); });
+    speak(cm, S.lang, ()=>{ stepUI(idx,'done'); _stepLock=-1; askStep(idx+1); });
   } else {
     botMsg('✅ '+val+'<br><span style="font-size:12px;color:var(--text2)">'+cm+'</span>');
-    speak(cm+'. '+val, S.lang, ()=>{ stepUI(idx,'done'); askStep(idx+1); });
+    speak(cm+'. '+val, S.lang, ()=>{ stepUI(idx,'done'); _stepLock=-1; askStep(idx+1); });
   }
   document.getElementById('mobBar').className='mobbar';
   document.getElementById('keypad').className='keypad-wrap';
@@ -1333,7 +1345,8 @@ async function finalize(){
     const d=await res.json();
     overlay(false);
     Object.assign(S,{department:d.department,floor:d.floor,floorWord:d.floorWord,
-      doctor:d.doctor,keywords:d.keywords,emergency:d.emergency,reg:d.registration_number});
+      doctor:d.doctor,keywords:d.keywords,emergency:d.emergency,reg:d.registration_number,
+      all_departments:d.all_departments||[]});
     if(S.emergency){
       show('se');
       const em={Telugu:'అత్యవసరం! గ్రౌండ్ ఫ్లోర్ కి వెళ్ళండి.',Hindi:'आपातकाल! ग्राउंड फ्लोर पर जाएं।',
@@ -1361,6 +1374,21 @@ function fillReceipt(){
   document.getElementById('r-wait').textContent='Show this token at the department counter';
   document.getElementById('r-dept').textContent=S.department||'—';
   document.getElementById('r-doc').textContent=S.doctor||'—';
+  // Show additional departments if multiple
+  const multiEl=document.getElementById('r-multidept');
+  const multiList=document.getElementById('r-multidept-list');
+  const others=(S.all_departments||[]).filter(d=>d.name!==S.department && d.name!=='Emergency');
+  if(others.length>0){
+    multiList.innerHTML=others.map(d=>
+      `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #e0e7ff;font-size:13px;">
+        <span style="font-weight:600;color:#1e293b;">🏥 \${d.name}</span>
+        <span style="color:#64748b;">Floor \${d.floor} · \${d.doctor}</span>
+       </div>`
+    ).join('');
+    multiEl.style.display='block';
+  }else{
+    multiEl.style.display='none';
+  }
   document.getElementById('r-fl').textContent=S.floor;
   document.getElementById('r-flw').textContent=S.floorWord||'—';
   document.getElementById('r-name').textContent=S.name||'—';
@@ -1399,7 +1427,7 @@ function startCD(){
 function resetAll(){
   clearInterval(cdTimer);cdDone=false;stopAudio();
   if(curSR){try{curSR.abort();}catch(e){}curSR=null;}
-  Object.assign(S,{lang:'English',step:0,name:'',age:'',mobile:'',symptoms:'',days:'',department:'',floor:1,floorWord:'',doctor:'',keywords:[],emergency:false,reg:''});
+  Object.assign(S,{lang:'English',step:0,name:'',age:'',mobile:'',symptoms:'',days:'',department:'',floor:1,floorWord:'',doctor:'',keywords:[],emergency:false,reg:'',all_departments:[]});
   mobileDigits='';
   document.getElementById('chat').innerHTML='';
   document.getElementById('langLbl').textContent='English';
@@ -1417,6 +1445,38 @@ function resetAll(){
 }
 
 document.getElementById('startBtn').addEventListener('click',startDetect);
+
+// Ping backend on load — shows splash if Render is waking up
+(async function pingBackend(){
+  const splash=document.createElement('div');
+  splash.id='renderSplash';
+  Object.assign(splash.style,{display:'none',position:'fixed',inset:'0',zIndex:'9999',
+    background:'#0F2137',flexDirection:'column',alignItems:'center',justifyContent:'center',
+    gap:'18px',fontFamily:'sans-serif'});
+  splash.innerHTML=`<div style="font-size:56px">🏥</div>
+    <div style="font-size:26px;font-weight:800;color:#fff"><span style="color:#93C5FD">Voice</span>Byte</div>
+    <div style="color:rgba(255,255,255,0.7);font-size:15px">Starting up, please wait…</div>
+    <div style="width:180px;height:4px;background:rgba(255,255,255,0.15);border-radius:4px;overflow:hidden">
+      <div id="splashBar" style="height:100%;width:0%;background:#3B82F6;border-radius:4px;transition:width 0.4s"></div></div>
+    <div id="splashMsg" style="color:rgba(255,255,255,0.4);font-size:12px">Connecting…</div>`;
+  document.body.appendChild(splash);
+  let pct=0;
+  const tick=setInterval(()=>{pct=Math.min(pct+3,88);document.getElementById('splashBar').style.width=pct+'%';},600);
+  const slowTimer=setTimeout(()=>{
+    splash.style.display='flex';
+    document.getElementById('splashMsg').textContent='Free server waking up (may take 30-50s)…';
+  },3000);
+  try{
+    await fetch(BACKEND+'/health',{cache:'no-store'});
+    clearTimeout(slowTimer);clearInterval(tick);
+    document.getElementById('splashBar').style.width='100%';
+    setTimeout(()=>{splash.style.display='none';},400);
+  }catch(e){
+    clearInterval(tick);
+    if(splash.style.display==='flex')
+      document.getElementById('splashMsg').textContent='Cannot reach server. Check Flask is running.';
+  }
+})();
 
 // ── NUMBER KEYPAD ──
 function kp(digit){

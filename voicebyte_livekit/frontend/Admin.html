@@ -402,7 +402,9 @@ td{padding:12px 14px;vertical-align:middle;}
 <div class="toast" id="toast"></div>
 
 <script>
-const BACKEND = 'https://voicebyte.onrender.com';
+const BACKEND = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')
+  ? 'http://127.0.0.1:5000'
+  : window.location.origin;
 let allPatients = [];
 let currentFilter = 'all';
 
