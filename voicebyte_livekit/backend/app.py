@@ -548,21 +548,22 @@ def extract():
     extracted  = ''
 
     if field == 'name':
-        # Always use Groq — handles all scripts (Hindi/Telugu/Tamil/Malayalam)
-        # Very short prompt = fast response (~1-2 sec)
+        # Extract name AND transliterate to English Roman letters
         try:
             extracted = ask_groq(
-                "Extract only the person's name. Remove words like 'my name is', 'I am', 'mera naam', 'naa peru', 'en peyar', 'ente peru' and similar phrases in any language. Return ONLY the name, 1-3 words, nothing else.",
+                "Extract the person's name from this text and write it in English Roman letters only. "
+                "Remove filler phrases like 'my name is', 'mera naam', 'naa peru', 'en peyar', 'ente peru' etc. "
+                "If name is in Telugu/Hindi/Tamil/Malayalam script, transliterate it to English. "
+                "Example: 'నా పేరు పూర్ణిమ' → 'Purnima', 'मेरा नाम सुरेश' → 'Suresh'. "
+                "Return ONLY the name in English letters, 1-3 words max.",
                 transcript, max_tok=15)
             extracted = extracted.strip().title()
-            # If Groq returns a sentence (more than 3 words), take first 2 words
             words = extracted.split()
             if len(words) > 3:
                 extracted = ' '.join(words[:2])
         except:
-            # Last resort — take last 1-2 words (name usually at end)
             words = transcript.strip().split()
-            extracted = ' '.join(words[-2:]).title() if len(words) >= 2 else transcript.strip().title()
+            extracted = ' '.join(words[-2:]).title() if len(words) >= 2 else 'Patient'
 
     elif field == 'age':
         # No Groq — use number conversion locally

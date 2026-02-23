@@ -1018,72 +1018,34 @@ function userMsg(t){
 // ── TTS ──
 let curAudio=null;
 // ── TTS using browser SpeechSynthesis (works on HTTPS, no autoplay block) ──
-const LANG_FALLBACKS = {
-  'Hindi':    ['hi-IN','hi','en-IN'],
-  'Tamil':    ['ta-IN','ta','en-IN'],
-  'Malayalam':['ml-IN','ml','en-IN'],
-  'English':  ['en-IN','en-US','en-GB']
-};
-// Telugu uses gTTS backend — browser has no reliable te-IN voice
-const USE_GTTS = ['Telugu'];
-
-let curAudioEl = null; // for gTTS audio element
-
-function getBestVoice(lang){
-  const voices = window.speechSynthesis.getVoices();
-  const codes  = LANG_FALLBACKS[lang] || ['en-IN'];
-  for(const code of codes){
-    const v = voices.find(function(v2){
-      return v2.lang === code || v2.lang.startsWith(code.split('-')[0]);
-    });
-    if(v) return {voice:v, langCode:v.lang};
-  }
-  return {voice:null, langCode:'en-IN'};
-}
+// ── TTS: use gTTS backend for ALL languages (works on Render HTTPS) ──
+let curAudioEl = null;
 
 function speak(text, lang, cb){
   if(!text){if(cb)cb();return;}
   stopAudio();
-  let _done = false;
-  const done = function(){ if(_done)return; _done=true; if(cb)cb(); };
+  var _done=false;
+  var done=function(){ if(_done)return; _done=true; curAudioEl=null; if(cb)cb(); };
 
-  if(USE_GTTS.indexOf(lang) !== -1){
-    // Use gTTS backend for Telugu
-    fetch(BACKEND+'/tts',{method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({text:text,lang:lang})})
-    .then(function(r){return r.blob();})
-    .then(function(blob){
-      const url = URL.createObjectURL(blob);
-      const a   = new Audio(url);
-      curAudioEl = a;
-      a.onended = function(){ URL.revokeObjectURL(url); curAudioEl=null; done(); };
-      a.onerror = function(){ URL.revokeObjectURL(url); curAudioEl=null; done(); };
-      a.play().catch(function(){ curAudioEl=null; done(); });
-    })
-    .catch(function(){ done(); });
-    return;
-  }
-
-  // Browser SpeechSynthesis for other languages
-  if(!window.speechSynthesis){done();return;}
-  const utt  = new SpeechSynthesisUtterance(text);
-  const best = getBestVoice(lang);
-  if(best.voice) utt.voice = best.voice;
-  utt.lang   = best.langCode;
-  utt.rate   = 0.9;
-  utt.pitch  = 1.0;
-  utt.volume = 1.0;
-  utt.onend   = done;
-  utt.onerror = done;
-  curAudio = utt;
-  setTimeout(function(){ window.speechSynthesis.speak(utt); }, 150);
+  fetch(BACKEND+'/tts',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({text:text, lang:lang})
+  })
+  .then(function(r){ return r.blob(); })
+  .then(function(blob){
+    var url = URL.createObjectURL(blob);
+    var a   = new Audio(url);
+    curAudioEl = a;
+    a.onended = function(){ URL.revokeObjectURL(url); done(); };
+    a.onerror = function(){ URL.revokeObjectURL(url); done(); };
+    a.play().catch(function(){ done(); });
+  })
+  .catch(function(){ done(); });
 }
 
 function stopAudio(){
-  if(window.speechSynthesis) window.speechSynthesis.cancel();
-  if(curAudioEl){ curAudioEl.pause(); curAudioEl=null; }
-  curAudio = null;
+  if(curAudioEl){ curAudioEl.pause(); curAudioEl.src=''; curAudioEl=null; }
 }
 
 // ── STEP UI ──
