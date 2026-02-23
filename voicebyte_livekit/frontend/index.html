@@ -1019,19 +1019,22 @@ function userMsg(t){
 let curAudio=null;
 // ── TTS using browser SpeechSynthesis (works on HTTPS, no autoplay block) ──
 const LANG_FALLBACKS = {
-  'Telugu':  ['te-IN','te','hi-IN','en-IN'],
-  'Hindi':   ['hi-IN','hi','en-IN'],
-  'Tamil':   ['ta-IN','ta','en-IN'],
+  'Hindi':    ['hi-IN','hi','en-IN'],
+  'Tamil':    ['ta-IN','ta','en-IN'],
   'Malayalam':['ml-IN','ml','en-IN'],
-  'English': ['en-IN','en-US','en-GB']
+  'English':  ['en-IN','en-US','en-GB']
 };
+// Telugu uses gTTS backend — browser has no reliable te-IN voice
+const USE_GTTS = ['Telugu'];
+
+let curAudioEl = null; // for gTTS audio element
 
 function getBestVoice(lang){
   const voices = window.speechSynthesis.getVoices();
   const codes  = LANG_FALLBACKS[lang] || ['en-IN'];
   for(const code of codes){
-    const v = voices.find(function(v){
-      return v.lang === code || v.lang.startsWith(code.split('-')[0]);
+    const v = voices.find(function(v2){
+      return v2.lang === code || v2.lang.startsWith(code.split('-')[0]);
     });
     if(v) return {voice:v, langCode:v.lang};
   }
@@ -1041,7 +1044,29 @@ function getBestVoice(lang){
 function speak(text, lang, cb){
   if(!text){if(cb)cb();return;}
   stopAudio();
-  if(!window.speechSynthesis){if(cb)cb();return;}
+  let _done = false;
+  const done = function(){ if(_done)return; _done=true; if(cb)cb(); };
+
+  if(USE_GTTS.indexOf(lang) !== -1){
+    // Use gTTS backend for Telugu
+    fetch(BACKEND+'/tts',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text:text,lang:lang})})
+    .then(function(r){return r.blob();})
+    .then(function(blob){
+      const url = URL.createObjectURL(blob);
+      const a   = new Audio(url);
+      curAudioEl = a;
+      a.onended = function(){ URL.revokeObjectURL(url); curAudioEl=null; done(); };
+      a.onerror = function(){ URL.revokeObjectURL(url); curAudioEl=null; done(); };
+      a.play().catch(function(){ curAudioEl=null; done(); });
+    })
+    .catch(function(){ done(); });
+    return;
+  }
+
+  // Browser SpeechSynthesis for other languages
+  if(!window.speechSynthesis){done();return;}
   const utt  = new SpeechSynthesisUtterance(text);
   const best = getBestVoice(lang);
   if(best.voice) utt.voice = best.voice;
@@ -1049,8 +1074,6 @@ function speak(text, lang, cb){
   utt.rate   = 0.9;
   utt.pitch  = 1.0;
   utt.volume = 1.0;
-  let _done  = false;
-  const done = function(){ if(_done)return; _done=true; curAudio=null; if(cb)cb(); };
   utt.onend   = done;
   utt.onerror = done;
   curAudio = utt;
@@ -1059,6 +1082,7 @@ function speak(text, lang, cb){
 
 function stopAudio(){
   if(window.speechSynthesis) window.speechSynthesis.cancel();
+  if(curAudioEl){ curAudioEl.pause(); curAudioEl=null; }
   curAudio = null;
 }
 

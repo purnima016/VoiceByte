@@ -548,40 +548,21 @@ def extract():
     extracted  = ''
 
     if field == 'name':
-        # Remove ALL common filler words in all 5 languages
-        fillers = [
-            # English
-            'my name is','i am','myself','name is','they call me','i go by',
-            'you can call me','please call me','the name is',
-            # Hindi
-            'mera naam','mera name','naam hai','main hoon','mujhe kehte hai',
-            'mujhe','mera','main',
-            # Telugu
-            'naa peru','na peru','nenu','naaku','naa name','nennu',
-            'naa perunu','naa perlu','mee peru','meeru',
-            # Tamil
-            'en peyar','ennoda peyar','enakku peyar','naan','yen peyar',
-            'என் பெயர்','என்னுடைய',
-            # Malayalam
-            'ente peru','entey peru','njaan','ente name','enikku',
-        ]
-        t = transcript.lower().strip()
-        for filler in sorted(fillers, key=len, reverse=True):  # longest first
-            t = t.replace(filler, ' ')
-        # Clean up and capitalize each word
-        words = [w.strip().capitalize() for w in t.split() if len(w.strip()) > 1]
-        extracted = ' '.join(words[:3])  # max 3 words for name
-
-        # If still looks like a sentence (too many words), use Groq
-        if not extracted or len(extracted) < 2 or len(extracted.split()) > 4:
-            try:
-                extracted = ask_groq(
-                    "Extract ONLY the person's name from this text. Return ONLY the name, 1-3 words max. Nothing else.",
-                    transcript, max_tok=15)
-                extracted = extracted.strip().title()
-            except:
-                extracted = words[0] if words else 'Patient'
-        extracted = extracted.strip().title()
+        # Always use Groq — handles all scripts (Hindi/Telugu/Tamil/Malayalam)
+        # Very short prompt = fast response (~1-2 sec)
+        try:
+            extracted = ask_groq(
+                "Extract only the person's name. Remove words like 'my name is', 'I am', 'mera naam', 'naa peru', 'en peyar', 'ente peru' and similar phrases in any language. Return ONLY the name, 1-3 words, nothing else.",
+                transcript, max_tok=15)
+            extracted = extracted.strip().title()
+            # If Groq returns a sentence (more than 3 words), take first 2 words
+            words = extracted.split()
+            if len(words) > 3:
+                extracted = ' '.join(words[:2])
+        except:
+            # Last resort — take last 1-2 words (name usually at end)
+            words = transcript.strip().split()
+            extracted = ' '.join(words[-2:]).title() if len(words) >= 2 else transcript.strip().title()
 
     elif field == 'age':
         # No Groq — use number conversion locally
