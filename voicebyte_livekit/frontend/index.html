@@ -1018,27 +1018,43 @@ function userMsg(t){
 // ── TTS ──
 let curAudio=null;
 // ── TTS using browser SpeechSynthesis (works on HTTPS, no autoplay block) ──
-const LANG_CODES = {
-  'English':'en-IN', 'Hindi':'hi-IN', 'Telugu':'te-IN',
-  'Tamil':'ta-IN', 'Malayalam':'ml-IN'
+const LANG_FALLBACKS = {
+  'Telugu':  ['te-IN','te','hi-IN','en-IN'],
+  'Hindi':   ['hi-IN','hi','en-IN'],
+  'Tamil':   ['ta-IN','ta','en-IN'],
+  'Malayalam':['ml-IN','ml','en-IN'],
+  'English': ['en-IN','en-US','en-GB']
 };
+
+function getBestVoice(lang){
+  const voices = window.speechSynthesis.getVoices();
+  const codes  = LANG_FALLBACKS[lang] || ['en-IN'];
+  for(const code of codes){
+    const v = voices.find(function(v){
+      return v.lang === code || v.lang.startsWith(code.split('-')[0]);
+    });
+    if(v) return {voice:v, langCode:v.lang};
+  }
+  return {voice:null, langCode:'en-IN'};
+}
 
 function speak(text, lang, cb){
   if(!text){if(cb)cb();return;}
   stopAudio();
   if(!window.speechSynthesis){if(cb)cb();return;}
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.lang  = LANG_CODES[lang] || 'en-IN';
-  utt.rate  = 0.92;
-  utt.pitch = 1.0;
+  const utt  = new SpeechSynthesisUtterance(text);
+  const best = getBestVoice(lang);
+  if(best.voice) utt.voice = best.voice;
+  utt.lang   = best.langCode;
+  utt.rate   = 0.9;
+  utt.pitch  = 1.0;
   utt.volume = 1.0;
-  let _done = false;
-  const done = ()=>{ if(_done)return; _done=true; curAudio=null; if(cb)cb(); };
+  let _done  = false;
+  const done = function(){ if(_done)return; _done=true; curAudio=null; if(cb)cb(); };
   utt.onend   = done;
   utt.onerror = done;
-  curAudio = utt; // store so stopAudio() can cancel it
-  // Small delay fixes Chrome SpeechSynthesis bug where first utterance is silent
-  setTimeout(()=>{ window.speechSynthesis.speak(utt); }, 100);
+  curAudio = utt;
+  setTimeout(function(){ window.speechSynthesis.speak(utt); }, 150);
 }
 
 function stopAudio(){
@@ -1400,12 +1416,12 @@ function fillReceipt(){
   const multiList=document.getElementById('r-multidept-list');
   const others=(S.all_departments||[]).filter(d=>d.name!==S.department && d.name!=='Emergency');
   if(others.length>0){
-    multiList.innerHTML=others.map(d=>
-      `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #e0e7ff;font-size:13px;">
-        <span style="font-weight:600;color:#1e293b;">🏥 \${d.name}</span>
-        <span style="color:#64748b;">Floor \${d.floor} · \${d.doctor}</span>
-       </div>`
-    ).join('');
+    multiList.innerHTML=others.map(function(d){
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #e0e7ff;font-size:13px;">'
+        +'<span style="font-weight:600;color:#1e293b;">🏥 '+d.name+'</span>'
+        +'<span style="color:#64748b;">Floor '+d.floor+' &middot; '+d.doctor+'</span>'
+        +'</div>';
+    }).join('');
     multiEl.style.display='block';
   }else{
     multiEl.style.display='none';
@@ -1465,8 +1481,15 @@ function resetAll(){
   show('sw');
 }
 
+// Pre-load voices immediately on page load
+if(window.speechSynthesis){
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = function(){
+    window.speechSynthesis.getVoices(); // ensure voices loaded
+  };
+}
+
 document.getElementById('startBtn').addEventListener('click', function(){
-  // Pre-load voices on first tap (Chrome needs this)
   if(window.speechSynthesis) window.speechSynthesis.getVoices();
   startDetect();
 });

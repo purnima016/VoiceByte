@@ -548,18 +548,39 @@ def extract():
     extracted  = ''
 
     if field == 'name':
-        # No Groq — just clean the transcript locally
-        fillers = ['my name is','i am','myself','name is','mera naam',
-                   'naam hai','naa peru','nenu','naaku','enakku peyar','ente peru']
-        t = transcript.lower()
-        for f2 in fillers:
-            t = t.replace(f2,'')
+        # Remove ALL common filler words in all 5 languages
+        fillers = [
+            # English
+            'my name is','i am','myself','name is','they call me','i go by',
+            'you can call me','please call me','the name is',
+            # Hindi
+            'mera naam','mera name','naam hai','main hoon','mujhe kehte hai',
+            'mujhe','mera','main',
+            # Telugu
+            'naa peru','na peru','nenu','naaku','naa name','nennu',
+            'naa perunu','naa perlu','mee peru','meeru',
+            # Tamil
+            'en peyar','ennoda peyar','enakku peyar','naan','yen peyar',
+            'என் பெயர்','என்னுடைய',
+            # Malayalam
+            'ente peru','entey peru','njaan','ente name','enikku',
+        ]
+        t = transcript.lower().strip()
+        for filler in sorted(fillers, key=len, reverse=True):  # longest first
+            t = t.replace(filler, ' ')
+        # Clean up and capitalize each word
         words = [w.strip().capitalize() for w in t.split() if len(w.strip()) > 1]
-        extracted = ' '.join(words[:4])
-        if not extracted or len(extracted) < 2:
-            extracted = ask_groq(
-                "Extract only the persons name. Return ONLY the name.",
-                transcript, max_tok=20)
+        extracted = ' '.join(words[:3])  # max 3 words for name
+
+        # If still looks like a sentence (too many words), use Groq
+        if not extracted or len(extracted) < 2 or len(extracted.split()) > 4:
+            try:
+                extracted = ask_groq(
+                    "Extract ONLY the person's name from this text. Return ONLY the name, 1-3 words max. Nothing else.",
+                    transcript, max_tok=15)
+                extracted = extracted.strip().title()
+            except:
+                extracted = words[0] if words else 'Patient'
         extracted = extracted.strip().title()
 
     elif field == 'age':
@@ -588,20 +609,25 @@ def extract():
         extracted = mobile if mobile and len(mobile) >= 8 else 'Not provided'
 
     elif field == 'symptoms':
-        # Groq with SHORT prompt
+        # Better symptom extraction with body part awareness
         sym_prompt = (
-            "Medical assistant. Patient spoke in " + lang + ". "
-            "Extract symptoms as 1-4 English keywords only. "
-            "Telugu hints: noppi=pain,jwaram=fever,daggulu=cough,vanthi=vomit,"
-            "gunde=chest/heart,tala=head,kadupu=stomach,kalu=leg. "
-            "Hindi hints: dard=pain,bukhar=fever,khansi=cough,ulti=vomit,"
-            "seena=chest,sar=head,pet=stomach,pair=leg. "
-            "Tamil: vali=pain,kaichal=fever,irumal=cough,nenja=chest,thalai=head. "
-            "Malayalam: veda=pain,pani=fever,irumal=cough,maarbu=chest,thala=head. "
-            "Return ONLY English keywords comma separated. Max 4. No Indian words."
+            "You are a medical assistant. Patient spoke in " + lang + ". "
+            "Extract their health symptoms as 1-4 clear English medical terms. "
+            "IMPORTANT: Combine body part + pain as one term. Examples: "
+            "kai vali = hand pain, kaal vali = leg pain, "
+            "kadupu noppi = stomach pain, tala noppi = headache, "
+            "gunde noppi = chest pain, muru noppi = knee pain, "
+            "veepu noppi = back pain, melu noppi = neck pain. "
+            "Language hints - "
+            "Telugu: noppi=pain,jwaram=fever,daggulu=cough,vanthi=vomit,gunde=chest,tala=head,kadupu=stomach,kalu=leg,kai=hand,veepu=back,muru=knee. "
+            "Hindi: dard=pain,bukhar=fever,khansi=cough,ulti=vomit,seena=chest,sar=head,pet=stomach,pair=leg,haath=hand,kamar=back,ghutna=knee. "
+            "Tamil: vali=pain,kaichal=fever,irumal=cough,vanthi=vomit,nenja=chest,thalai=head,vayiru=stomach,kaal=leg,kai=hand,muppu=back. "
+            "Malayalam: veda=pain,pani=fever,irumal=cough,oki=vomit,maarbu=chest,thala=head,vayaru=stomach,kaal=leg,kai=hand,novu=pain. "
+            "Rules: Return ONLY English medical terms comma separated. Max 4 terms. "
+            "Keep body+pain together as one term like 'hand pain' not separate 'hand' and 'pain'."
         )
-        extracted = ask_groq(sym_prompt, "Patient said: " + transcript, max_tok=50)
-        if not extracted or len(extracted) > 120:
+        extracted = ask_groq(sym_prompt, "Patient said: " + transcript, max_tok=60)
+        if not extracted or len(extracted) > 150:
             extracted = 'general complaint'
 
     elif field == 'days':
