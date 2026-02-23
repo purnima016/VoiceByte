@@ -722,12 +722,19 @@ def admin_page():
           {'<p style="color:red;font-size:13px;margin-top:10px;">❌ Wrong password. Try again.</p>' if wrong else ''}
         </div></body></html>''', 401
 
-    import os as _os
-    for d in ['../frontend','frontend','.']:
-        p = _os.path.join(d,'Admin.html')
-        if _os.path.exists(p):
-            return send_from_directory(d,'Admin.html')
-    return "admin.html not found", 404
+    # Find Admin.html — works both locally and on Render
+    base = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.path.join(base, '..', 'frontend', 'Admin.html'),
+        os.path.join(base, 'frontend', 'Admin.html'),
+        os.path.join(base, '..', 'frontend', 'admin.html'),
+        os.path.join(base, 'Admin.html'),
+        os.path.join(base, 'admin.html'),
+    ]
+    for path in candidates:
+        if os.path.exists(path):
+            return send_from_directory(os.path.dirname(path), os.path.basename(path))
+    return "Admin page not found. Check Admin.html is in frontend folder.", 404
 
 @app.route('/admin/queue')
 def admin_queue():
