@@ -1232,7 +1232,9 @@ document.getElementById('mbtn').addEventListener('click',()=>{
   setTimeout(()=>startListen(S.step),300);
 });
 
+let _listenLock=false;
 function startListen(idx){
+  if(_listenLock){return;} // prevent double listen
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){toast('❌ Please use Google Chrome');return;}
   const key=KEYS[idx];
@@ -1242,6 +1244,7 @@ function startListen(idx){
     mstatEl.textContent='⌨️ Use keypad below';
     return;
   }
+  _listenLock=true;
   const sr=new SR();curSR=sr;
   const SR_LANG={'English':'en-IN','Hindi':'hi-IN','Telugu':'te-IN','Tamil':'ta-IN','Malayalam':'ml-IN'};
   sr.lang=SR_LANG[S.lang]||'en-IN';
@@ -1251,7 +1254,7 @@ function startListen(idx){
   micOn();
   let done=false;
   function finish(t){
-    if(done)return;done=true;curSR=null;
+    if(done)return;done=true;curSR=null;_listenLock=false;
     micBusy();
     if(!t){
       botMsg('🔁 '+ph().retry);
@@ -1315,7 +1318,8 @@ async function processAns(idx,transcript){
       return;
     }
     accept(idx,val);
-  }catch(e){rmTyping();overlay(false);toast('❌ Backend error');micReady();}
+  }catch(e){rmTyping();overlay(false);toast('❌ Server busy — please try again');
+        setTimeout(()=>{ micReady(); }, 1500);micReady();}
 }
 
 const CLANG = {
@@ -1372,7 +1376,12 @@ async function finalize(){
       fillReceipt();
       speak(msg,S.lang,null);
     }
-  }catch(e){overlay(false);toast('❌ Backend error');}
+  }catch(e){
+    overlay(false);
+    // Show retry button instead of just error
+    toast('❌ Connection issue — tap mic and try again');
+    micReady();
+  }
 }
 
 // ── RECEIPT ──

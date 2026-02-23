@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_cors import CORS
 from groq import Groq
 from dotenv import load_dotenv
-import os, sqlite3, uuid, re, io, urllib.request, json as _json
+import os, sqlite3, time, uuid, re, io, urllib.request, json as _json
 from datetime import datetime
 
 load_dotenv()
@@ -125,17 +125,28 @@ def save_patient(data):
 # ─────────────────────────────
 #  GROQ HELPER
 # ─────────────────────────────
-def ask_groq(system_prompt, user_msg):
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user",   "content": user_msg}
-        ],
-        max_tokens=150,
-        temperature=0.0
-    )
-    return response.choices[0].message.content.strip()
+def ask_groq(system_prompt, user_msg, max_tok=150):
+    # Retry up to 3 times if Groq fails
+    last_error = None
+    for attempt in range(3):
+        try:
+            response = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user",   "content": user_msg}
+                ],
+                max_tokens=max_tok,
+                temperature=0.0,
+                timeout=15
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            last_error = e
+            print(f"[Groq attempt {attempt+1} failed]: {e}")
+            time.sleep(1)  # wait 1 second before retry
+    print(f"[Groq all retries failed]: {last_error}")
+    raise last_error
 
 # ─────────────────────────────
 #  WORD-TO-DIGIT MAP
@@ -532,574 +543,102 @@ def detect_language():
 def extract():
     body       = request.json
     field      = body.get('field','')
-    transcript = body.get('transcript','')
+    transcript = body.get('transcript','').strip()
+    lang       = body.get('lang','English')
     extracted  = ''
 
-    lang = body.get('lang', 'English')
-
     if field == 'name':
-        extracted = ask_groq(
-            "Extract the person's name from this speech transcript. "
-            "The person spoke in " + lang + ". "
-            "Return ONLY the name, nothing else. Capitalize properly.",
-            transcript)
+        # No Groq — just clean the transcript locally
+        fillers = ['my name is','i am','myself','name is','mera naam',
+                   'naam hai','naa peru','nenu','naaku','enakku peyar','ente peru']
+        t = transcript.lower()
+        for f2 in fillers:
+            t = t.replace(f2,'')
+        words = [w.strip().capitalize() for w in t.split() if len(w.strip()) > 1]
+        extracted = ' '.join(words[:4])
+        if not extracted or len(extracted) < 2:
+            extracted = ask_groq(
+                "Extract only the persons name. Return ONLY the name.",
+                transcript, max_tok=20)
         extracted = extracted.strip().title()
 
     elif field == 'age':
-        # First try direct digit extraction
+        # No Groq — use number conversion locally
         age = extract_age_from_text(transcript)
         if age:
             extracted = age
         else:
-            # Try Telugu/Tamil compound number lookup
             t_lower = transcript.lower().strip()
-            found = None
-            for phrase, num in TELUGU_AGES.items():
+            for phrase, num in COMPOUND_NUMBERS.items():
                 if phrase in t_lower:
-                    found = num
-                    break
-            if found:
-                extracted = found
-            else:
-                # Ask Groq with full language context — must reject non-age input
+                    n = int(num)
+                    if 1 <= n <= 120:
+                        extracted = str(n)
+                        break
+            if not extracted:
                 raw = ask_groq(
-                    "The patient was asked 'How old are you?' and replied in " + lang + ".\n"
-                    "Does their reply contain a number that represents an age (1-120)?\n"
-                    "If YES: return ONLY that number (e.g. 25). No words, no explanation.\n"
-                    "If NO (random words, name, movie title, unclear): return exactly: Unknown\n\n"
-                    "Number words - Telugu: okati=1,rendu=2,madu=3,nalugu=4,ayidu=5,"
-                    "aaru=6,edu=7,enimidi=8,tommidi=9,padi=10,iravai=20,muppai=30,nalabhai=40,yabhai=50. "
-                    "Tamil: onru=1,irandu=2,moondru=3,pathu=10,irupathu=20,muppathu=30. "
-                    "Hindi: ek=1,do=2,teen=3,bees=20,tees=30,chalis=40.\n"
-                    "IMPORTANT: Only return a number if the input is clearly an age response. "
-                    "Do NOT extract numbers from unrelated words, names, or movie titles.",
-                    "Patient said: " + transcript)
-                digits_only = re.sub(r'\D','',raw)
-                if digits_only and 1 <= int(digits_only) <= 120:
-                    extracted = digits_only
-                else:
-                    extracted = 'Unknown'
+                    "Extract age number only (1-120). Return ONLY digits.",
+                    "Patient said: " + transcript, max_tok=10)
+                digits = re.sub(r"\D","",raw)
+                extracted = digits if digits and 1<=int(digits or 0)<=120 else 'Unknown'
 
     elif field == 'mobile':
+        # No Groq — pure local extraction
         mobile = extract_mobile_from_text(transcript)
-        if mobile and len(mobile) >= 8:
-            extracted = mobile
-        else:
-            raw = ask_groq(
-                "Convert this to phone number digits only. "
-                "'nine'=9,'eight'=8,'seven'=7,'six'=6,'five'=5,'four'=4,'three'=3,'two'=2,'one'=1,'zero'=0. "
-                "Return ONLY digits no spaces.", transcript)
-            digits = re.sub(r'\D','',raw)
-            extracted = digits[:10] if digits else 'Not provided'
+        extracted = mobile if mobile and len(mobile) >= 8 else 'Not provided'
 
     elif field == 'symptoms':
-        extracted = ask_groq(
-            "You are a medical transcription assistant. The patient spoke in " + lang + ".\n"
-            "TASK: Translate ONLY what they said into 1-4 English medical keywords.\n\n"
-
-            "=== TELUGU MEDICAL DICTIONARY ===\n"
-            # Body pain
-            "kadupu noppi/vayiru noppi/veepu noppi/belly noppi=stomach pain, "
-            "nadumu noppi/naduma noppi=back pain, "
-            "tala noppi/tala deba=headache, "
-            "gunde noppi/chati noppi/gurra noppi=chest pain, "
-            "gola noppi/ganthu noppi=throat pain, "
-            "cheyyi noppi/chetu noppi=hand pain, "
-            "kalu noppi/legs noppi=leg pain, "
-            "motu noppi/mokkalu noppi=knee pain, "
-            "kanna noppi/kannu noppi=eye pain, "
-            "chevi noppi=ear pain, "
-            "meda noppi/melam noppi=neck pain, "
-            "chankalu noppi=hip pain, "
-            "mokkal noppi/sandhi noppi=joint pain, "
-            "bhuja noppi/melupu noppi=shoulder pain, "
-            "mungu noppi/mukha noppi=face pain, "
-            # Heart
-            "gunde noppi/gunde vedana=heart pain, "
-            "gunde moraipothundi/gunde strike aipothundi=heart attack, "
-            "gunde dorikipothundi/gunde veganga kottukuntundi=heart palpitation, "
-            "gunde aagipothundi=cardiac arrest, "
-            "gunde pani cheyyatledu=heart failure, "
-            "gunde block/arteries block=heart blockage, "
-            "gunde vapu/chest heavy=chest heaviness, "
-            "cheyyi numbness/cheyyi timmiraipothundi=arm numbness, "
-            # Brain / Neurological
-            "tala noppi/matham noppi=headache, "
-            "tala tirugutundi/tala ghurugunna=dizziness, "
-            "fits/mirgi/fits vachindi=seizure/epilepsy, "
-            "paralisys/sarbhaga kottindi=paralysis/stroke, "
-            "nerves weakness/naadi bayata pettindi=nerve weakness, "
-            "maatalu raatledu/nalukanoppi=speech difficulty, "
-            "kannu saraga kanpistundi ledu=vision problem, "
-            "memory poindi/gurthu poyindi=memory loss, "
-            "tala bharam/brain pressure=brain pressure, "
-            "migraine/tala mantha noppi=migraine, "
-            "unconscious/sense ledu/murchha=unconscious, "
-            "hand foot timmiri/numbness=numbness, "
-            "trembling/chetulu adugutunnai=trembling, "
-            # Fever / infections
-            "jwaram/jwarum/veyyi/vegam=fever, "
-            "dengue jwaram/dengue=dengue fever, "
-            "malaria jwaram/malaria=malaria, "
-            "typhoid/typhoid jwaram=typhoid, "
-            "corona/covid=covid, "
-            "chikkenpox/annapurna/murichalu=chickenpox, "
-            "jaundice/kamala vyadhi/kannu pacchabadiindi=jaundice, "
-            "TB/tuberculosis/daggulu blood vastundi=tuberculosis, "
-            "jadam/chali jwaram=chills, "
-            "daggulu/khanam=cough, "
-            "tummulu=sneezing, "
-            "mukku kaaram/mukku padam=runny nose, "
-            "gola naripothundi=sore throat, "
-            # Stomach / digestion
-            "vanthi/vomit aipothundi=vomiting, "
-            "vanthi bhavana/vankara=nausea, "
-            "bathukamma/belly burning=acidity, "
-            "bathrooms ekkuva/loose motions=diarrhea, "
-            "malabandham/pottu kaadu=constipation, "
-            "gas problem/vayu=gas, "
-            "aakali ledu=loss of appetite, "
-            "liver problem/yakrit vyadhi=liver problem, "
-            "piles/mulavyadhi/gudda blood=piles/hemorrhoids, "
-            "appendix noppi=appendix pain, "
-            "hernia=hernia, "
-            "ulcer/kadupu lo puta=stomach ulcer, "
-            # Breathing / lungs
-            "usmiri aadustundi/usmiri tirugutundi=breathlessness, "
-            "asthma/dama=asthma, "
-            "chest tight=chest tightness, "
-            "lungs infection/nippu tagu=lung infection, "
-            "pneumonia=pneumonia, "
-            "blood with cough/daggulu lo blood=coughing blood, "
-            # Diabetes / BP / thyroid
-            "sugar vyadhi/madhumeham=diabetes, "
-            "blood sugar ekkuva=high blood sugar, "
-            "blood sugar taggindi=low blood sugar, "
-            "pressure ekkuva/BP ekkuva=high blood pressure, "
-            "pressure taggindi/BP taggindi=low blood pressure, "
-            "thyroid/thyroid problem=thyroid, "
-            "weight ekkuva avuthundi=weight gain, "
-            "weight taggindi=weight loss, "
-            "cholesterol ekkuva=high cholesterol, "
-            # Kidney / urinary
-            "kidney problem/mootra pitham=kidney problem, "
-            "kidney stone/kallu=kidney stone, "
-            "mootram povatledu/mootram kashtam=urinary problem, "
-            "mootram manta=burning urination, "
-            "mootram ekkuva=frequent urination, "
-            "mootram lo blood=blood in urine, "
-            "dialysis=dialysis, "
-            # Skin
-            "charmavyadhi/gajji=skin rash, "
-            "marugu/itching=itching, "
-            "gaayal/puta=wound, "
-            "vundlu=boils, "
-            "psoriasis/charmavyadhi=psoriasis, "
-            "allergy/allergy reaction=allergy, "
-            # Eyes / ears / nose
-            "kannu errabadiindi=red eye, "
-            "kannu vadam=eye discharge, "
-            "chevi paaduthundi=ear discharge, "
-            "mukku moosukovatledu=blocked nose, "
-            "cataract/kannu madhyalo tella=cataract, "
-            "glaucoma/kannu pressure=glaucoma, "
-            # Women's health
-            "periods noppi/monthly noppi=menstrual pain, "
-            "irregular periods=irregular periods, "
-            "pregnancy problem=pregnancy complication, "
-            "breast noppi=breast pain, "
-            "white discharge=vaginal discharge, "
-            # Mental health
-            "depression/manasu bayam=depression, "
-            "bayam/anxiety=anxiety, "
-            "nidra lekapovudam=insomnia, "
-            "stress ekkuva=stress, "
-            # General
-            "neradu/aayaasam=weakness/fatigue, "
-            "tala tirugutundi=dizziness, "
-            "muttukopovudam=fainting, "
-            "body antha noppi=body pain, "
-            "blood anaemia/rakt heenata=anaemia, "
-            "swelling/veepu=swelling, "
-            "accident/gaayal=injury/accident, "
-            "fracture/elumbu virigindi=fracture, "
-
-            "\n=== HINDI MEDICAL DICTIONARY ===\n"
-            # Body pain
-            "pet dard/pet mein dard/pait dard=stomach pain, "
-            "kamar dard/peeth dard=back pain, "
-            "sar dard/sir dard=headache, "
-            "seene mein dard/chati mein dard=chest pain, "
-            "gale mein dard/gala dard=throat pain, "
-            "haath mein dard=hand pain, "
-            "pair mein dard/taang dard=leg pain, "
-            "ghutne mein dard=knee pain, "
-            "aankh mein dard/aankh jalti hai=eye pain, "
-            "kaan mein dard=ear pain, "
-            "gardan dard=neck pain, "
-            "jodon mein dard/haddi dard=joint pain, "
-            "kandhe mein dard=shoulder pain, "
-            "kamar neeche dard=lower back pain, "
-            # Heart
-            "dil mein dard/dil dukh raha=heart pain, "
-            "heart attack/dil ka daura=heart attack, "
-            "dil tez dhak raha/dhadkan tez hai=heart palpitation, "
-            "dil band ho gaya/cardiac arrest=cardiac arrest, "
-            "dil ki nali band/heart blockage=heart blockage, "
-            "seene mein bhaari pan=chest heaviness, "
-            "haath sone laga/haath sunn=arm numbness, "
-            "dil kamzor hai=heart failure, "
-            # Brain / Neurological
-            "chakkar aana=dizziness, "
-            "mirgi/fits aana=seizure/epilepsy, "
-            "laqwa/paralysis/stroke=paralysis/stroke, "
-            "yaaddasht kam ho gayi=memory loss, "
-            "bolne mein takleef=speech difficulty, "
-            "aankhon se dhundhla dikhta=vision problem, "
-            "dimag mein dard/dimag bhaari=brain pressure, "
-            "migraine/aadha sar dard=migraine, "
-            "behoshi/hosh nahi=unconscious, "
-            "haath pair sunn ho gaye=numbness, "
-            "kaanpna/haath kaanpte hain=trembling, "
-            "nerve dard/nason mein dard=nerve pain, "
-            # Fever / infections
-            "bukhar/tez bukhar/jwar=fever, "
-            "dengue/dengue bukhar=dengue fever, "
-            "malaria/thandi ke saath bukhar=malaria, "
-            "typhoid=typhoid, "
-            "corona/covid=covid, "
-            "chechak/chickenpox=chickenpox, "
-            "peelia/jaundice/aankhein peeli=jaundice, "
-            "TB/tuberculosis/khansi mein khoon=tuberculosis, "
-            "kaanpna/thand lagti hai=chills, "
-            "khansi=cough, "
-            "chheenk=sneezing, "
-            "naak behna/naak band=runny nose, "
-            "gala kharab=sore throat, "
-            # Stomach / digestion
-            "ulti/vomiting=vomiting, "
-            "matli/ji machlana=nausea, "
-            "seene mein jalan/khatti dakar=acidity, "
-            "dast/loose motions=diarrhea, "
-            "kabz/potty nahi hoti=constipation, "
-            "gas problem/pet phoolna=gas, "
-            "bhook nahi lagti=loss of appetite, "
-            "liver kharab/jigar ki bimari=liver problem, "
-            "bawaseer/piles/gudey mein khoon=piles/hemorrhoids, "
-            "appendix dard=appendix pain, "
-            "hernia=hernia, "
-            "pet mein chhaale/ulcer=stomach ulcer, "
-            # Breathing / lungs
-            "saans nahi aata/saans fulna=breathlessness, "
-            "dama/asthma=asthma, "
-            "seene mein khinchav=chest tightness, "
-            "phaiphdon mein infection=lung infection, "
-            "pneumonia=pneumonia, "
-            "khansi mein khoon=coughing blood, "
-            # Diabetes / BP / thyroid
-            "sugar/madhumeh/diabetes=diabetes, "
-            "sugar zyada hai=high blood sugar, "
-            "sugar kam ho gayi=low blood sugar, "
-            "BP zyada/high BP=high blood pressure, "
-            "BP kam/low BP=low blood pressure, "
-            "thyroid=thyroid, "
-            "cholesterol zyada=high cholesterol, "
-            # Kidney / urinary
-            "gurde ki takleef/kidney problem=kidney problem, "
-            "gurde mein pathri/kidney stone=kidney stone, "
-            "peshab nahi hota=urinary problem, "
-            "peshab mein jalan=burning urination, "
-            "baar baar peshab=frequent urination, "
-            "peshab mein khoon=blood in urine, "
-            # Skin
-            "charm rog/khujli/daane=skin rash, "
-            "khujli=itching, "
-            "zakhm/chot=wound, "
-            "allergy=allergy, "
-            "psoriasis=psoriasis, "
-            # Eyes / ears
-            "aankhein laal=red eye, "
-            "cataract/aankhon mein safedi=cataract, "
-            # Women's health
-            "mahawari mein dard/periods dard=menstrual pain, "
-            "irregular mahawari=irregular periods, "
-            "pregnancy mein takleef=pregnancy complication, "
-            "safed paani aana=vaginal discharge, "
-            # Mental health
-            "depression/udaasi=depression, "
-            "ghabrahat/anxiety=anxiety, "
-            "neend nahi aati=insomnia, "
-            "stress/tanav=stress, "
-            # General
-            "kamzori/thakan=weakness/fatigue, "
-            "behoshi=fainting, "
-            "body dard/pura badan dard=body pain, "
-            "khoon ki kami/anaemia=anaemia, "
-            "sujan/soojhan=swelling, "
-            "haddi tooti/fracture=fracture, "
-            "accident/chot lagi=injury/accident, "
-            "wajan kam ho raha=weight loss, "
-
-            "\n=== TAMIL MEDICAL DICTIONARY ===\n"
-            # Body pain
-            "vayiru vali/thopu vali=stomach pain, "
-            "mughu vali/idupu vali=back pain, "
-            "thalai vali=headache, "
-            "nenja vali/maarbu vali=chest pain, "
-            "tholai vali=throat pain, "
-            "kai vali=hand pain, "
-            "kaal vali=leg pain, "
-            "muzhangaal vali=knee pain, "
-            "kann vali=eye pain, "
-            "sevvi vali=ear pain, "
-            "kazhuththu vali=neck pain, "
-            "sandhi vali/moopu vali=joint pain, "
-            "thole vali=shoulder pain, "
-            # Heart
-            "idhaya vali/nenja vali=heart pain, "
-            "heart attack/idhaya aappu=heart attack, "
-            "idhayam vega thudithal=heart palpitation, "
-            "idhaya nilai thevermai=cardiac arrest, "
-            "idhaya blockage=heart blockage, "
-            "nenja kanamai=chest heaviness, "
-            "kai maraththu=arm numbness, "
-            # Brain / Neurological
-            "thalaisuzhhal=dizziness, "
-            "valappu noi/fits=seizure/epilepsy, "
-            "paralysis/stroke/udal oru palam=paralysis/stroke, "
-            "ninaivagam kulainthal=memory loss, "
-            "pesum thiramillai=speech difficulty, "
-            "paarvai kuraippu=vision problem, "
-            "thalai azhuttam=brain pressure, "
-            "migraine/oru thalai vali=migraine, "
-            "maychal/sothy ponal=unconscious, "
-            "kai kaal maraththu=numbness, "
-            "kai nadungal=trembling, "
-            # Fever / infections
-            "kaichal/juram=fever, "
-            "dengue kaichal=dengue fever, "
-            "malaria=malaria, "
-            "typhoid=typhoid, "
-            "corona/covid=covid, "
-            "siththu ammai/chickenpox=chickenpox, "
-            "kamaalai/jaundice/kann manjal=jaundice, "
-            "TB/maarbagam/irumalil blood=tuberculosis, "
-            "ndukkam=chills, "
-            "irumal=cough, "
-            "thummal=sneezing, "
-            "mookku oothutal=runny nose, "
-            "tholai noi=sore throat, "
-            # Stomach / digestion
-            "vanthi=vomiting, "
-            "kuruttai=nausea, "
-            "nenju erikal/aambam=acidity, "
-            "vayitru oothal/loose motions=diarrhea, "
-            "malachikkal=constipation, "
-            "vatham/gas=gas, "
-            "pasiyillai=loss of appetite, "
-            "liver pirachchanai=liver problem, "
-            "moolam/piles=piles/hemorrhoids, "
-            "appendix vali=appendix pain, "
-            "hernia=hernia, "
-            "ulcer/vayiru punn=stomach ulcer, "
-            # Breathing / lungs
-            "moochu thirumbal=breathlessness, "
-            "iral noi/asthma=asthma, "
-            "nenja izhukku=chest tightness, "
-            "neeraikal infection=lung infection, "
-            "pneumonia=pneumonia, "
-            "irumalil blood=coughing blood, "
-            # Diabetes / BP / thyroid
-            "sarkkarai noi/neerizhu/diabetes=diabetes, "
-            "sarkkarai adhikam=high blood sugar, "
-            "sarkkarai kuranthal=low blood sugar, "
-            "rattham azhuththam adhigam/high BP=high blood pressure, "
-            "rattham azhuththam kurangal/low BP=low blood pressure, "
-            "thyroid=thyroid, "
-            "cholesterol adhigam=high cholesterol, "
-            # Kidney / urinary
-            "siruneeragam pirachchanai/kidney problem=kidney problem, "
-            "kidney kallu=kidney stone, "
-            "saluval pirachchanai=urinary problem, "
-            "saluval erikal=burning urination, "
-            "adikhama saluval=frequent urination, "
-            "saluvalil blood=blood in urine, "
-            # Skin
-            "tholnoi/thadippu/themal=skin rash, "
-            "arippu=itching, "
-            "kaayam/punn=wound, "
-            "allergy=allergy, "
-            # Eyes / ears
-            "kann sivappu=red eye, "
-            "kann padam/cataract=cataract, "
-            # Women's health
-            "maadhavidai vali/periods vali=menstrual pain, "
-            "irregular periods=irregular periods, "
-            "pregnancy pirachchanai=pregnancy complication, "
-            "vella paduthal=vaginal discharge, "
-            # Mental health
-            "manam theivu/depression=depression, "
-            "arimugiyamai/anxiety=anxiety, "
-            "thoongamai=insomnia, "
-            "stress=stress, "
-            # General
-            "udalsustu/thalarchi=weakness/fatigue, "
-            "maychal=fainting, "
-            "udal vali=body pain, "
-            "rattham kudaiyamai/anaemia=anaemia, "
-            "veekkam/sujai=swelling, "
-            "eluumbu murivu/fracture=fracture, "
-            "edai kurangal=weight loss, "
-
-            "\n=== MALAYALAM MEDICAL DICTIONARY ===\n"
-            # Body pain
-            "vayaru veda/vayar vali=stomach pain, "
-            "nada veda/mughu veda=back pain, "
-            "thalavedan/thala veda=headache, "
-            "nenja veda/maarbu veda=chest pain, "
-            "tholai veda/gala veda=throat pain, "
-            "kai veda=hand pain, "
-            "kaal veda=leg pain, "
-            "muthukaal veda=knee pain, "
-            "kann veda=eye pain, "
-            "chevy veda=ear pain, "
-            "kazhuththu veda=neck pain, "
-            "sandhiveda/moopu veda=joint pain, "
-            "thole veda=shoulder pain, "
-            # Heart
-            "hridayaveda/maarbu veda=heart pain, "
-            "heart attack/hridaya aappu=heart attack, "
-            "hridayam vega thudikkunnu=heart palpitation, "
-            "cardiac arrest/hridayam nilkkunnu=cardiac arrest, "
-            "heart blockage=heart blockage, "
-            "nenja bhaaram=chest heaviness, "
-            "kai maraykkunnu=arm numbness, "
-            "hridaya paripoorna=heart failure, "
-            # Brain / Neurological
-            "thalakanal/mathimutal=dizziness, "
-            "fits/apasmaram=seizure/epilepsy, "
-            "paralysis/stroke/shareeram thazharuka=paralysis/stroke, "
-            "ormasakti kuranjal=memory loss, "
-            "samsarikkan kashtam=speech difficulty, "
-            "kaanaan kashtam=vision problem, "
-            "thala pressure=brain pressure, "
-            "migraine/oru thalavedan=migraine, "
-            "behosha/ബോധം കെടൽ=unconscious, "
-            "kai kaal marayuka=numbness, "
-            "kai vayarkkunnu=trembling, "
-            # Fever / infections
-            "pani/jvaram=fever, "
-            "dengue pani=dengue fever, "
-            "malaria=malaria, "
-            "typhoid=typhoid, "
-            "corona/covid=covid, "
-            "chickenpox/ammai=chickenpox, "
-            "jaundice/manja pani/kann manjappam=jaundice, "
-            "TB/tuberculosis/irumalil chora=tuberculosis, "
-            "viryal/thanda=chills, "
-            "irumal/chemal=cough, "
-            "thummal=sneezing, "
-            "mookku oothal=runny nose, "
-            "tholai veda=sore throat, "
-            # Stomach / digestion
-            "oki/vanthi=vomiting, "
-            "okkanam=nausea, "
-            "nazhappu/amlam=acidity, "
-            "vayyaru irakkam/loose motions=diarrhea, "
-            "malachakku=constipation, "
-            "vaayu/gas=gas, "
-            "vishapilla=loss of appetite, "
-            "liver prabhandam=liver problem, "
-            "moolam/piles=piles/hemorrhoids, "
-            "appendix veda=appendix pain, "
-            "hernia=hernia, "
-            "ulcer/vayar punn=stomach ulcer, "
-            # Breathing / lungs
-            "shwasam mudakkam=breathlessness, "
-            "asthma/iral/dama=asthma, "
-            "nenja izhukku=chest tightness, "
-            "shwasakosha rogam=lung infection, "
-            "pneumonia=pneumonia, "
-            "irumalil chora=coughing blood, "
-            # Diabetes / BP / thyroid
-            "pramehm/sugar/diabetes=diabetes, "
-            "sugar koothi=high blood sugar, "
-            "sugar kuranja=low blood sugar, "
-            "BP koothi/high BP=high blood pressure, "
-            "BP kuranja/low BP=low blood pressure, "
-            "thyroid=thyroid, "
-            "cholesterol koothi=high cholesterol, "
-            # Kidney / urinary
-            "kidney prabhandam=kidney problem, "
-            "kidney kallu=kidney stone, "
-            "mutram prabhandam=urinary problem, "
-            "mutram erikal=burning urination, "
-            "mutram adikham=frequent urination, "
-            "mutram chora=blood in urine, "
-            # Skin
-            "tvacha rogam/charma rogam/themal=skin rash, "
-            "cheyyichil=itching, "
-            "muram/punn=wound, "
-            "allergy=allergy, "
-            # Eyes / ears
-            "kann chuvappu=red eye, "
-            "cataract/kann velupp=cataract, "
-            # Women's health
-            "masika veda/periods veda=menstrual pain, "
-            "irregular masikam=irregular periods, "
-            "pregnancy prabhandam=pregnancy complication, "
-            "vella sraavam=vaginal discharge, "
-            # Mental health
-            "vishada rogam/depression=depression, "
-            "utkantha/anxiety=anxiety, "
-            "urakkamedukkal=insomnia, "
-            "stress=stress, "
-            # General
-            "ksheenatha/thalarcha=weakness/fatigue, "
-            "behosha=fainting, "
-            "udal veda=body pain, "
-            "anaemia/raktha darbhalyam=anaemia, "
-            "veekkam/neer ketti=swelling, "
-            "elumbu murivu/fracture=fracture, "
-            "accident/petti=injury/accident, "
-            "thookam kurangal=weight loss\n\n"
-
-            "STRICT RULES:\n"
-            "- Return ONLY English keywords, comma-separated\n"
-            "- DO NOT add symptoms the patient did not mention\n"
-            "- DO NOT include any Indian language words in the output\n"
-            "- Translate exactly what they said — do not change or expand it\n"
-            "- Maximum 4 keywords",
-            "Patient said: " + transcript)
-        if not extracted or len(extracted) > 100 or 'no medical' in extracted.lower():
-            extracted = ask_groq(
-                "What body part or symptom is the patient describing? Return 1-3 English words only. "
-                "Do not guess or add extra symptoms.",
-                transcript)
-        if not extracted or len(extracted) > 60:
+        # Groq with SHORT prompt
+        sym_prompt = (
+            "Medical assistant. Patient spoke in " + lang + ". "
+            "Extract symptoms as 1-4 English keywords only. "
+            "Telugu hints: noppi=pain,jwaram=fever,daggulu=cough,vanthi=vomit,"
+            "gunde=chest/heart,tala=head,kadupu=stomach,kalu=leg. "
+            "Hindi hints: dard=pain,bukhar=fever,khansi=cough,ulti=vomit,"
+            "seena=chest,sar=head,pet=stomach,pair=leg. "
+            "Tamil: vali=pain,kaichal=fever,irumal=cough,nenja=chest,thalai=head. "
+            "Malayalam: veda=pain,pani=fever,irumal=cough,maarbu=chest,thala=head. "
+            "Return ONLY English keywords comma separated. Max 4. No Indian words."
+        )
+        extracted = ask_groq(sym_prompt, "Patient said: " + transcript, max_tok=50)
+        if not extracted or len(extracted) > 120:
             extracted = 'general complaint'
 
     elif field == 'days':
-        extracted = ask_groq(
-            "Convert this patient's duration statement to English. "
-            "Telugu: okati roju=1 day, rendu rojulu=2 days, madu rojulu=3 days, "
-            "oka vaaram=1 week, rendu vaaram=2 weeks, oka nela=1 month. "
-            "Tamil: oru naal=1 day, irandu naal=2 days, oru vaaram=1 week, oru madam=1 month. "
-            "Hindi: ek din=1 day, do din=2 days, ek hafte=1 week, ek mahina=1 month. "
-            "Return ONLY the English duration like '2 days' or '1 week'. Nothing else.",
-            "Patient said: " + transcript)
-        # Clean up
-        if not extracted or len(extracted) > 25 or 'no duration' in extracted.lower():
-            nums = re.findall(r'\d+', words_to_digits(transcript))
-            extracted = nums[0] + ' days' if nums else '1 day'
-        # Remove any extra text
-        extracted = extracted.strip().split('\n')[0][:25]
+        # Try local first
+        t = transcript.lower()
+        day_map = {
+            'one day':'1 day','two days':'2 days','three days':'3 days',
+            'four days':'4 days','five days':'5 days',
+            'one week':'1 week','two weeks':'2 weeks','one month':'1 month',
+            'okati roju':'1 day','rendu rojulu':'2 days','madu rojulu':'3 days',
+            'oka vaaram':'1 week','rendu vaaram':'2 weeks','oka nela':'1 month',
+            'ek din':'1 day','do din':'2 days','teen din':'3 days',
+            'ek hafte':'1 week','ek mahina':'1 month',
+            'oru naal':'1 day','irandu naal':'2 days','oru vaaram':'1 week',
+            'oru divasam':'1 day','randu divasam':'2 days','oru azhcha':'1 week',
+        }
+        found = None
+        for phrase, val in day_map.items():
+            if phrase in t:
+                found = val
+                break
+        if found:
+            extracted = found
+        else:
+            nums = re.findall(r"\d+", words_to_digits(transcript))
+            if nums:
+                n = int(nums[0])
+                extracted = str(n) + (" day" if n==1 else " days") if n<=30 else str(n)+" weeks"
+            else:
+                raw = ask_groq(
+                    "Convert to duration. Return ONLY like: 3 days or 1 week",
+                    "Patient said: " + transcript, max_tok=15)
+                extracted = raw.strip().split("\n")[0][:25] if raw else '1 day'
 
-    return jsonify({'extracted': extracted.strip()})
+    return jsonify({'extracted': extracted.strip() if extracted else 'Unknown'})
 
-# ─────────────────────────────
-#  PROCESS & SAVE
-# ─────────────────────────────
+
 @app.route('/process', methods=['POST'])
 def process():
     body      = request.json
@@ -1149,14 +688,38 @@ def get_patients():
 # ─────────────────────────────
 #  ADMIN DASHBOARD ROUTES
 # ─────────────────────────────
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "voicebyte2024")
+
 @app.route('/admin')
 def admin_page():
+    auth = request.args.get('key','')
+    if auth != ADMIN_PASSWORD:
+        wrong = request.args.get('key') is not None
+        return f'''<html><body style="font-family:sans-serif;display:flex;align-items:center;
+        justify-content:center;height:100vh;margin:0;background:#0F2137;">
+        <div style="background:white;padding:40px;border-radius:16px;text-align:center;width:320px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+          <div style="font-size:48px">🏥</div>
+          <h2 style="color:#1252A3;margin:10px 0">VoiceByte Admin</h2>
+          <p style="color:#666;font-size:14px;margin-bottom:20px">Doctors only. Enter password to continue.</p>
+          <form method="GET">
+            <input name="key" type="password" placeholder="Enter admin password"
+              style="width:100%;padding:12px;border:2px solid #ddd;border-radius:8px;
+              font-size:15px;box-sizing:border-box;margin-bottom:12px;outline:none;"/>
+            <button type="submit"
+              style="width:100%;padding:12px;background:#1252A3;color:white;
+              border:none;border-radius:8px;font-size:16px;cursor:pointer;font-weight:700;">
+              🔐 Login
+            </button>
+          </form>
+          {'<p style="color:red;font-size:13px;margin-top:10px;">❌ Wrong password. Try again.</p>' if wrong else ''}
+        </div></body></html>''', 401
+
     import os as _os
     for d in ['../frontend','frontend','.']:
-        p = _os.path.join(d,'admin.html')
+        p = _os.path.join(d,'Admin.html')
         if _os.path.exists(p):
-            return send_from_directory(d,'admin.html')
-    return "admin.html not found",404
+            return send_from_directory(d,'Admin.html')
+    return "admin.html not found", 404
 
 @app.route('/admin/queue')
 def admin_queue():
