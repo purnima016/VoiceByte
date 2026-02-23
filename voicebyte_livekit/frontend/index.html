@@ -1017,29 +1017,34 @@ function userMsg(t){
 
 // ── TTS ──
 let curAudio=null;
-function speak(text,lang,cb){
+// ── TTS using browser SpeechSynthesis (works on HTTPS, no autoplay block) ──
+const LANG_CODES = {
+  'English':'en-IN', 'Hindi':'hi-IN', 'Telugu':'te-IN',
+  'Tamil':'ta-IN', 'Malayalam':'ml-IN'
+};
+
+function speak(text, lang, cb){
   if(!text){if(cb)cb();return;}
-  if(curAudio){curAudio.pause();curAudio.src='';curAudio=null;}
-  fetch(BACKEND+'/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,lang})})
-  .then(r=>r.blob())
-  .then(blob=>{
-    const url=URL.createObjectURL(blob);
-    const a=new Audio(url);curAudio=a;
-    let _done=false;
-    const done=()=>{if(_done)return;_done=true;URL.revokeObjectURL(url);curAudio=null;if(cb)cb();};
-    a.onended=done; a.onerror=done;
-    // Force play with user gesture context
-    const playPromise = a.play();
-    if(playPromise !== undefined){
-      playPromise.catch(()=>{
-        // Autoplay blocked — skip audio, still call callback so questions continue
-        curAudio=null; done();
-      });
-    }
-  })
-  .catch(()=>{if(cb)cb();});
+  stopAudio();
+  if(!window.speechSynthesis){if(cb)cb();return;}
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang  = LANG_CODES[lang] || 'en-IN';
+  utt.rate  = 0.92;
+  utt.pitch = 1.0;
+  utt.volume = 1.0;
+  let _done = false;
+  const done = ()=>{ if(_done)return; _done=true; curAudio=null; if(cb)cb(); };
+  utt.onend   = done;
+  utt.onerror = done;
+  curAudio = utt; // store so stopAudio() can cancel it
+  // Small delay fixes Chrome SpeechSynthesis bug where first utterance is silent
+  setTimeout(()=>{ window.speechSynthesis.speak(utt); }, 100);
 }
-function stopAudio(){if(curAudio){curAudio.pause();curAudio.src='';curAudio=null;}}
+
+function stopAudio(){
+  if(window.speechSynthesis) window.speechSynthesis.cancel();
+  curAudio = null;
+}
 
 // ── STEP UI ──
 function stepUI(idx,cls){
@@ -1451,15 +1456,9 @@ function resetAll(){
   show('sw');
 }
 
-document.getElementById('startBtn').addEventListener('click', async function(){
-  // Unlock audio on first tap — required by Chrome on HTTPS
-  try{
-    const ctx = new (window.AudioContext||window.webkitAudioContext)();
-    const buf = ctx.createBuffer(1,1,22050);
-    const src = ctx.createBufferSource();
-    src.buffer = buf; src.connect(ctx.destination); src.start(0);
-    await ctx.resume();
-  }catch(e){}
+document.getElementById('startBtn').addEventListener('click', function(){
+  // Pre-load voices on first tap (Chrome needs this)
+  if(window.speechSynthesis) window.speechSynthesis.getVoices();
   startDetect();
 });
 
