@@ -1018,8 +1018,9 @@ function userMsg(t){
 // ── TTS ──
 let curAudio=null;
 // ── TTS using browser SpeechSynthesis (works on HTTPS, no autoplay block) ──
-// ── TTS: Browser SpeechSynthesis ──
+// ── TTS: Browser SpeechSynthesis + gTTS for Telugu ──
 var _synth = window.speechSynthesis;
+var curAudioEl = null;
 
 var SYNTH_LANG = {
   'English':   'en-IN',
@@ -1029,29 +1030,75 @@ var SYNTH_LANG = {
   'Telugu':    'te-IN'
 };
 
-// Load voices as early as possible
+// Load voices early
 if(_synth){ _synth.getVoices(); }
 if(_synth){ _synth.onvoiceschanged = function(){ _synth.getVoices(); }; }
 
-function speak(text, lang, cb){
-  if(!text){if(cb)cb();return;}
-  stopAudio();
-  if(!_synth){if(cb)cb();return;}
+function hasVoiceForLang(lang){
+  if(!_synth) return false;
+  var voices = _synth.getVoices();
+  var code = SYNTH_LANG[lang] || 'en-IN';
+  var langPrefix = code.split('-')[0];
+  for(var i=0;i<voices.length;i++){
+    if(voices[i].lang === code || voices[i].lang.startsWith(langPrefix)){
+      return true;
+    }
+  }
+  return false;
+}
+
+function speakBrowser(text, lang, cb){
   _synth.cancel();
   var utt = new SpeechSynthesisUtterance(text);
   utt.lang   = SYNTH_LANG[lang] || 'en-IN';
   utt.rate   = 0.88;
   utt.pitch  = 1.0;
   utt.volume = 1.0;
-  var _d = false;
-  var done = function(){ if(_d)return; _d=true; if(cb)cb(); };
-  utt.onend   = done;
-  utt.onerror = done;
+  var _d=false;
+  var done=function(){ if(_d)return;_d=true;if(cb)cb(); };
+  utt.onend=done; utt.onerror=done;
   setTimeout(function(){ _synth.speak(utt); }, 150);
+}
+
+function speakGTTS(text, lang, cb){
+  var _d=false;
+  var done=function(){ if(_d)return;_d=true;curAudioEl=null;if(cb)cb(); };
+  fetch(BACKEND+'/tts',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({text:text,lang:lang})})
+  .then(function(r){return r.blob();})
+  .then(function(blob){
+    var url=URL.createObjectURL(blob);
+    var a=new Audio(url); curAudioEl=a;
+    a.onended=function(){URL.revokeObjectURL(url);done();};
+    a.onerror=function(){URL.revokeObjectURL(url);done();};
+    var p=a.play();
+    if(p!==undefined) p.catch(function(){
+      URL.revokeObjectURL(url); curAudioEl=null;
+      // gTTS blocked — try browser as last resort
+      speakBrowser(text, lang, cb);
+    });
+  })
+  .catch(function(){ speakBrowser(text,lang,cb); });
+}
+
+function speak(text, lang, cb){
+  if(!text){if(cb)cb();return;}
+  stopAudio();
+  // Telugu: always use gTTS (laptop has no te-IN voice)
+  // Others: use browser if voice available, else gTTS
+  if(lang === 'Telugu'){
+    speakGTTS(text, lang, cb);
+  } else if(hasVoiceForLang(lang)){
+    speakBrowser(text, lang, cb);
+  } else {
+    speakGTTS(text, lang, cb);
+  }
 }
 
 function stopAudio(){
   if(_synth) _synth.cancel();
+  if(curAudioEl){curAudioEl.pause();curAudioEl.src='';curAudioEl=null;}
 }
 
 // ── STEP UI ──
@@ -1067,7 +1114,22 @@ function stepUI(idx,cls){
 
 // ── MIC STATUS ──
 function micReady(){document.getElementById('mbtn').classList.remove('on');const s=document.getElementById('mstat');s.className='mstat';s.textContent='👆 Tap mic to speak';}
-function micOn(){document.getElementById('mbtn').classList.add('on');const s=document.getElementById('mstat');s.className='mstat on';s.textContent='🔴 Listening… speak now';}
+function micOn(){
+  document.getElementById('mbtn').classList.add('on');
+  const s=document.getElementById('mstat');
+  s.className='mstat on';s.textContent='🔴 Listening… speak now';
+  // Ting sound using Web Audio API — works on laptop and phone
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const o=ctx.createOscillator();
+    const g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    o.type='sine';o.frequency.value=880;
+    g.gain.setValueAtTime(0.3,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.4);
+    o.start(ctx.currentTime);o.stop(ctx.currentTime+0.4);
+  }catch(e){}
+}
 function micBusy(){document.getElementById('mbtn').classList.remove('on');const s=document.getElementById('mstat');s.className='mstat';s.textContent='⏳ Processing…';}
 
 // ════════════════════════════════
