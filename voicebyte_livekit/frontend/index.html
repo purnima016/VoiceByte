@@ -6,705 +6,220 @@
 <title>VoiceByte — AI Hospital Registration</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
 <style>
-/* ══════════════════════════════════════════
-   DESIGN SYSTEM — Clinical Clarity Theme
-══════════════════════════════════════════ */
 :root{
-  --bg:        #EEF4FB;
-  --bg2:       #F8FBFF;
-  --white:     #FFFFFF;
-  --blue:      #1252A3;
-  --blue2:     #1A6FD4;
-  --blue-light:#E8F0FB;
-  --blue-mid:  #C8DCF8;
-  --green:     #00936B;
-  --green-light:#E6F6F2;
-  --red:       #D92D20;
-  --red-light: #FEF0EE;
-  --orange:    #E07B12;
-  --text:      #0F2137;
-  --text2:     #4A6280;
-  --text3:     #8EA5BD;
-  --border:    #D8E6F5;
-  --border2:   #B8D0EE;
-  --shadow:    0 2px 16px rgba(18,82,163,0.08);
-  --shadow2:   0 8px 40px rgba(18,82,163,0.14);
-  --radius:    20px;
-  --radius2:   14px;
-  --radius3:   10px;
+  --bg:#EEF4FB;--bg2:#F8FBFF;--white:#FFFFFF;--blue:#1252A3;--blue2:#1A6FD4;
+  --blue-light:#E8F0FB;--blue-mid:#C8DCF8;--green:#00936B;--green-light:#E6F6F2;
+  --red:#D92D20;--red-light:#FEF0EE;--orange:#E07B12;--text:#0F2137;
+  --text2:#4A6280;--text3:#8EA5BD;--border:#D8E6F5;--border2:#B8D0EE;
+  --shadow:0 2px 16px rgba(18,82,163,0.08);--shadow2:0 8px 40px rgba(18,82,163,0.14);
+  --radius:20px;--radius2:14px;--radius3:10px;
 }
-
 *{margin:0;padding:0;box-sizing:border-box;}
-
-body{
-  font-family:'Inter',sans-serif;
-  background:var(--bg);
-  color:var(--text);
-  min-height:100vh;
-  overflow:hidden;
-}
-
-/* No top bar */
-
-/* ══════════════════════════════════════════
-   SCREEN TRANSITIONS
-══════════════════════════════════════════ */
-.screen{
-  position:fixed;inset:0;
-  display:flex;align-items:center;justify-content:center;
-  opacity:0;pointer-events:none;
-  transition:opacity .35s ease, transform .35s cubic-bezier(.4,0,.2,1);
-  transform:translateY(12px);
-  z-index:1;
-  padding:12px;
-}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow:hidden;}
+.screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .35s ease,transform .35s cubic-bezier(.4,0,.2,1);transform:translateY(12px);z-index:1;padding:12px;}
 .screen.active{opacity:1;pointer-events:all;transform:translateY(0);}
-
-/* ══════════════════════════════════════════
-   WELCOME SCREEN
-══════════════════════════════════════════ */
 #sw{background:var(--bg);}
-
-.wcard{
-  background:var(--white);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow2);
-  border:1px solid var(--border);
-  max-width:460px;width:100%;
-  padding:44px 40px;
-  display:flex;flex-direction:column;align-items:center;
-  gap:22px;text-align:center;
-  position:relative;overflow:hidden;
-  animation:card-enter .5s cubic-bezier(.4,0,.2,1);
-}
+.wcard{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow2);border:1px solid var(--border);max-width:460px;width:100%;padding:44px 40px;display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center;position:relative;overflow:hidden;animation:card-enter .5s cubic-bezier(.4,0,.2,1);}
 @keyframes card-enter{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
-
-/* top colour band inside card */
-.wcard::before{
-  content:'';position:absolute;
-  top:0;left:0;right:0;height:4px;
-  background:linear-gradient(90deg, var(--blue), var(--blue2), #2DD4BF);
-}
-
-.wlogo-wrap{
-  width:80px;height:80px;position:relative;
-  margin-top:8px;
-}
-.wlogo{
-  width:80px;height:80px;border-radius:22px;
-  background:linear-gradient(135deg, var(--blue), var(--blue2));
-  display:flex;align-items:center;justify-content:center;
-  font-size:34px;
-  box-shadow:0 8px 24px rgba(18,82,163,0.3);
-  position:relative;z-index:1;
-  animation:logo-float 4s ease-in-out infinite;
-}
+.wcard::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--blue),var(--blue2),#2DD4BF);}
+.wlogo-wrap{width:80px;height:80px;position:relative;margin-top:8px;}
+.wlogo{width:80px;height:80px;border-radius:22px;background:linear-gradient(135deg,var(--blue),var(--blue2));display:flex;align-items:center;justify-content:center;font-size:34px;box-shadow:0 8px 24px rgba(18,82,163,0.3);position:relative;z-index:1;animation:logo-float 4s ease-in-out infinite;}
 @keyframes logo-float{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
-
-.wbadge{
-  position:absolute;bottom:-5px;right:-5px;
-  background:var(--green);
-  color:#fff;font-size:10px;font-weight:800;
-  width:26px;height:26px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  letter-spacing:0;text-transform:uppercase;
-  border:2.5px solid var(--white);
-  box-shadow:0 2px 8px rgba(0,147,107,0.3);
-}
-
-.wtit{
-  font-family:'Plus Jakarta Sans',sans-serif;
-  font-size:34px;font-weight:800;
-  color:var(--text);letter-spacing:-0.5px;
-  line-height:1.1;
-}
+.wtit{font-family:'Plus Jakarta Sans',sans-serif;font-size:34px;font-weight:800;color:var(--text);letter-spacing:-0.5px;line-height:1.1;}
 .wtit .v{color:var(--blue);}
-
-.wsub{
-  font-size:14px;color:var(--text2);
-  line-height:1.7;max-width:340px;
-}
-
-/* Pulse line (EKG style) */
+.wsub{font-size:14px;color:var(--text2);line-height:1.7;max-width:340px;}
 .ekg-wrap{width:100%;height:36px;overflow:hidden;position:relative;}
 .ekg-svg{position:absolute;left:0;top:0;width:200%;height:100%;animation:ekg-scroll 3s linear infinite;}
 @keyframes ekg-scroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
-
 .wlangs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;}
-.wlang{
-  font-size:12px;font-weight:500;color:var(--text2);
-  background:var(--bg);border:1px solid var(--border);
-  padding:5px 12px;border-radius:20px;
-  transition:all .2s;cursor:default;
-}
-.wlang:hover{border-color:var(--border2);color:var(--blue);}
-
-.sbtn{
-  width:100%;padding:17px;border:none;border-radius:var(--radius2);
-  background:linear-gradient(135deg, var(--blue), var(--blue2));
-  color:#fff;font-family:'Plus Jakarta Sans',sans-serif;
-  font-weight:700;font-size:17px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;gap:10px;
-  box-shadow:0 6px 24px rgba(18,82,163,0.35);
-  transition:all .2s;position:relative;overflow:hidden;
-}
-.sbtn::after{
-  content:'';position:absolute;
-  top:50%;left:50%;width:0;height:0;
-  background:rgba(255,255,255,0.15);border-radius:50%;
-  transform:translate(-50%,-50%);
-  transition:width .4s, height .4s;
-}
+.wlang{font-size:12px;font-weight:500;color:var(--text2);background:var(--bg);border:1px solid var(--border);padding:5px 12px;border-radius:20px;transition:all .2s;cursor:default;}
+.sbtn{width:100%;padding:17px;border:none;border-radius:var(--radius2);background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 24px rgba(18,82,163,0.35);transition:all .2s;}
 .sbtn:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(18,82,163,0.4);}
-.sbtn:active::after{width:300px;height:300px;}
-.sbtn:active{transform:translateY(0);}
-
 .wfoot{font-size:11px;color:var(--text3);}
-
-/* ══════════════════════════════════════════
-   LANGUAGE DETECT SCREEN
-══════════════════════════════════════════ */
 #sd{background:var(--bg);}
-
-.dcard{
-  background:var(--white);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow2);
-  border:1px solid var(--border);
-  max-width:420px;width:100%;
-  padding:44px 36px;
-  display:flex;flex-direction:column;align-items:center;gap:24px;
-  text-align:center;
-  animation:card-enter .4s cubic-bezier(.4,0,.2,1);
-}
-
+.dcard{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow2);border:1px solid var(--border);max-width:420px;width:100%;padding:44px 36px;display:flex;flex-direction:column;align-items:center;gap:24px;text-align:center;animation:card-enter .4s cubic-bezier(.4,0,.2,1);}
 .dmic-zone{position:relative;width:140px;height:140px;display:flex;align-items:center;justify-content:center;}
-.dring{
-  position:absolute;border-radius:50%;
-  border:1.5px solid rgba(18,82,163,0.15);
-  animation:dring-out 2.5s ease-out infinite;
-}
-.dring:nth-child(1){inset:0;animation-delay:0s;}
-.dring:nth-child(2){inset:-16px;animation-delay:.5s;opacity:0.7;}
-.dring:nth-child(3){inset:-32px;animation-delay:1s;opacity:0.4;}
+.dring{position:absolute;border-radius:50%;border:1.5px solid rgba(18,82,163,0.15);animation:dring-out 2.5s ease-out infinite;}
+.dring:nth-child(1){inset:0;animation-delay:0s;}.dring:nth-child(2){inset:-16px;animation-delay:.5s;opacity:0.7;}.dring:nth-child(3){inset:-32px;animation-delay:1s;opacity:0.4;}
 @keyframes dring-out{0%{transform:scale(1);opacity:0.6;}100%{transform:scale(1.25);opacity:0;}}
-
-.dmic.on .dring{border-color:rgba(217,45,32,0.3);}
-
-.dmic{
-  width:96px;height:96px;border-radius:50%;
-  background:linear-gradient(135deg, var(--blue), var(--blue2));
-  border:none;cursor:pointer;font-size:38px;
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 8px 28px rgba(18,82,163,0.35);
-  transition:all .3s;z-index:1;position:relative;
-}
-.dmic:hover{transform:scale(1.04);}
-.dmic.on{
-  background:linear-gradient(135deg, var(--red), #B91C1C);
-  box-shadow:0 8px 28px rgba(217,45,32,0.4);
-  animation:mic-pulse .85s ease-in-out infinite;
-}
+.dmic{width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--blue2));border:none;cursor:pointer;font-size:38px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px rgba(18,82,163,0.35);transition:all .3s;z-index:1;position:relative;}
+.dmic.on{background:linear-gradient(135deg,var(--red),#B91C1C);box-shadow:0 8px 28px rgba(217,45,32,0.4);animation:mic-pulse .85s ease-in-out infinite;}
 @keyframes mic-pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}
-
-/* Sound wave bars */
 .swave{display:flex;align-items:center;gap:3px;height:28px;opacity:0;transition:opacity .3s;}
 .swave.on{opacity:1;}
-.sb{
-  width:3px;border-radius:3px;
-  background:linear-gradient(to top, var(--blue), var(--blue2));
-  height:4px;animation:sw .9s ease-in-out infinite;
-}
-.sb:nth-child(1){animation-delay:.0s;}
-.sb:nth-child(2){animation-delay:.1s;}
-.sb:nth-child(3){animation-delay:.2s;}
-.sb:nth-child(4){animation-delay:.3s;}
-.sb:nth-child(5){animation-delay:.15s;}
-.sb:nth-child(6){animation-delay:.05s;}
-.sb:nth-child(7){animation-delay:.25s;}
-.sb:nth-child(8){animation-delay:.1s;}
+.sb{width:3px;border-radius:3px;background:linear-gradient(to top,var(--blue),var(--blue2));height:4px;animation:sw .9s ease-in-out infinite;}
+.sb:nth-child(1){animation-delay:.0s;}.sb:nth-child(2){animation-delay:.1s;}.sb:nth-child(3){animation-delay:.2s;}.sb:nth-child(4){animation-delay:.3s;}.sb:nth-child(5){animation-delay:.15s;}.sb:nth-child(6){animation-delay:.05s;}.sb:nth-child(7){animation-delay:.25s;}.sb:nth-child(8){animation-delay:.1s;}
 @keyframes sw{0%,100%{height:4px;}50%{height:22px;}}
-
-.dtit{
-  font-family:'Plus Jakarta Sans',sans-serif;
-  font-size:21px;font-weight:700;color:var(--text);
-}
+.dtit{font-family:'Plus Jakarta Sans',sans-serif;font-size:21px;font-weight:700;color:var(--text);}
 .dsub{font-size:13px;color:var(--text2);line-height:1.6;}
-
 .lpills{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
-.lpill{
-  padding:7px 15px;border-radius:30px;
-  font-size:13px;font-weight:600;
-  background:var(--bg);border:1.5px solid var(--border);
-  color:var(--text2);cursor:default;
-  transition:all .35s cubic-bezier(.4,0,.2,1);
-}
-.lpill.on{
-  background:var(--blue-light);
-  border-color:var(--blue2);color:var(--blue);
-  transform:scale(1.07);
-  box-shadow:0 2px 12px rgba(18,82,163,0.15);
-}
+.lpill{padding:7px 15px;border-radius:30px;font-size:13px;font-weight:600;background:var(--bg);border:1.5px solid var(--border);color:var(--text2);cursor:default;transition:all .35s cubic-bezier(.4,0,.2,1);}
+.lpill.on{background:var(--blue-light);border-color:var(--blue2);color:var(--blue);transform:scale(1.07);box-shadow:0 2px 12px rgba(18,82,163,0.15);}
 .dhint{font-size:13px;color:var(--text3);min-height:18px;}
-
-/* ══════════════════════════════════════════
-   INTAKE / CHAT SCREEN
-══════════════════════════════════════════ */
 #si{flex-direction:column;align-items:center;background:var(--bg);padding:0;}
 .iwrap{width:100%;max-width:640px;height:100vh;display:flex;flex-direction:column;}
-
-/* Top bar */
-.topbar{
-  background:var(--white);
-  border-bottom:1px solid var(--border);
-  padding:11px 18px;
-  display:flex;align-items:center;justify-content:space-between;
-  flex-shrink:0;
-  box-shadow:0 1px 8px rgba(18,82,163,0.06);
-}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:11px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 1px 8px rgba(18,82,163,0.06);}
 .tl{display:flex;align-items:center;gap:10px;}
-.bbtn{
-  width:32px;height:32px;border-radius:8px;
-  border:1.5px solid var(--border);background:var(--white);
-  cursor:pointer;font-size:14px;color:var(--text2);
-  transition:all .2s;
-}
-.bbtn:hover{border-color:var(--border2);background:var(--blue-light);color:var(--blue);}
+.bbtn{width:32px;height:32px;border-radius:8px;border:1.5px solid var(--border);background:var(--white);cursor:pointer;font-size:14px;color:var(--text2);transition:all .2s;}
 .ttit{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;color:var(--text);}
 .ttit span{color:var(--blue);}
-.lbadge{
-  display:flex;align-items:center;gap:6px;
-  background:var(--blue-light);border:1px solid var(--blue-mid);
-  padding:4px 12px;border-radius:20px;
-  font-size:11px;font-weight:600;color:var(--blue);
-}
+.lbadge{display:flex;align-items:center;gap:6px;background:var(--blue-light);border:1px solid var(--blue-mid);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;color:var(--blue);}
 .ldot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:dot-blink 2s infinite;}
-
-/* Progress bar */
+@keyframes dot-blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
 .prog-bar-wrap{background:var(--white);padding:0 18px 10px;border-bottom:1px solid var(--border);flex-shrink:0;}
 .prog-info{display:flex;justify-content:space-between;align-items:center;padding:8px 0 6px;}
 .prog-label{font-size:12px;font-weight:600;color:var(--text2);}
 .prog-pct{font-size:12px;font-weight:700;color:var(--blue);}
 .prog-track{height:5px;background:var(--border);border-radius:5px;overflow:hidden;}
 .prog-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--blue2));border-radius:5px;transition:width .5s cubic-bezier(.4,0,.2,1);width:0%;}
-
-/* Step bar */
-.stepbar{
-  background:var(--white);padding:12px 18px 10px;
-  border-bottom:1px solid var(--border);flex-shrink:0;
-}
+.stepbar{background:var(--white);padding:12px 18px 10px;border-bottom:1px solid var(--border);flex-shrink:0;}
 .srow{display:flex;align-items:flex-start;}
-.si-el{
-  display:flex;flex-direction:column;align-items:center;flex:1;
-  position:relative;gap:5px;
-}
-.si-el:not(:last-child)::after{
-  content:'';position:absolute;
-  top:17px;left:calc(50% + 18px);right:calc(-50% + 18px);
-  height:2px;background:var(--border);z-index:0;transition:background .4s;
-}
+.si-el{display:flex;flex-direction:column;align-items:center;flex:1;position:relative;gap:5px;}
+.si-el:not(:last-child)::after{content:'';position:absolute;top:17px;left:calc(50% + 18px);right:calc(-50% + 18px);height:2px;background:var(--border);z-index:0;transition:background .4s;}
 .si-el.done:not(:last-child)::after{background:var(--blue);}
-.sico{
-  width:34px;height:34px;border-radius:50%;
-  background:var(--bg);border:2px solid var(--border);
-  display:flex;align-items:center;justify-content:center;
-  font-size:14px;z-index:1;transition:all .3s;
-}
+.sico{width:34px;height:34px;border-radius:50%;background:var(--bg);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;z-index:1;transition:all .3s;}
 .si-el.active .sico{border-color:var(--blue);background:var(--blue-light);box-shadow:0 0 0 4px rgba(18,82,163,0.08);}
 .si-el.done .sico{border-color:var(--blue);background:var(--blue);}
 .slabel{font-size:9px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.3px;}
 .si-el.active .slabel{color:var(--blue);}
 .si-el.done .slabel{color:var(--blue);}
 .chint{text-align:center;font-size:10px;color:var(--text3);margin-top:4px;}
-
-/* Chat */
-.chat{
-  flex:1;overflow-y:auto;padding:16px 18px;
-  display:flex;flex-direction:column;gap:12px;
-  scrollbar-width:thin;scrollbar-color:var(--border) transparent;
-}
-.chat::-webkit-scrollbar{width:4px;}
-.chat::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
-
+.chat{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
 .brow{display:flex;gap:8px;align-items:flex-end;animation:msg-in .3s ease;}
 @keyframes msg-in{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-.brow.bot{flex-direction:row;}
-.brow.usr{flex-direction:row-reverse;}
-
+.brow.bot{flex-direction:row;}.brow.usr{flex-direction:row-reverse;}
 .av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
-.av.bav{background:linear-gradient(135deg,var(--blue),var(--blue2));}
-.av.uav{background:var(--blue-light);border:1.5px solid var(--blue-mid);}
-
+.av.bav{background:linear-gradient(135deg,var(--blue),var(--blue2));}.av.uav{background:var(--blue-light);border:1.5px solid var(--blue-mid);}
 .bbl{max-width:78%;padding:11px 15px;border-radius:18px;font-size:14px;line-height:1.55;}
-.bbl.bot{
-  background:var(--white);border:1px solid var(--border);
-  border-bottom-left-radius:4px;color:var(--text);
-  box-shadow:0 2px 8px rgba(18,82,163,0.06);
-}
-.bbl.usr{
-  background:linear-gradient(135deg,var(--blue),var(--blue2));
-  color:#fff;border-bottom-right-radius:4px;
-}
+.bbl.bot{background:var(--white);border:1px solid var(--border);border-bottom-left-radius:4px;color:var(--text);box-shadow:0 2px 8px rgba(18,82,163,0.06);}
+.bbl.usr{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border-bottom-right-radius:4px;}
 .btime{font-size:10px;opacity:0.45;margin-top:4px;}
-
-.tbbl{
-  background:var(--white);border:1px solid var(--border);
-  padding:11px 15px;border-radius:18px;border-bottom-left-radius:4px;
-  display:flex;gap:4px;align-items:center;
-  box-shadow:0 2px 8px rgba(18,82,163,0.06);
-}
+.tbbl{background:var(--white);border:1px solid var(--border);padding:11px 15px;border-radius:18px;border-bottom-left-radius:4px;display:flex;gap:4px;align-items:center;box-shadow:0 2px 8px rgba(18,82,163,0.06);}
 .td{width:6px;height:6px;border-radius:50%;background:var(--blue);opacity:0.5;animation:tb .9s ease-in-out infinite;}
 .td:nth-child(2){animation-delay:.2s;}.td:nth-child(3){animation-delay:.4s;}
 @keyframes tb{0%,80%,100%{transform:translateY(0);opacity:0.5;}40%{transform:translateY(-5px);opacity:1;}}
-
-/* Bot area */
-.bot-area{
-  background:var(--white);border-top:1px solid var(--border);
-  padding:18px 18px 26px;flex-shrink:0;
-  display:flex;flex-direction:column;align-items:center;gap:11px;
-  box-shadow:0 -2px 12px rgba(18,82,163,0.06);
-}
+.bot-area{background:var(--white);border-top:1px solid var(--border);padding:18px 18px 26px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:11px;box-shadow:0 -2px 12px rgba(18,82,163,0.06);}
 .imic-wrap{position:relative;width:80px;height:80px;display:flex;align-items:center;justify-content:center;}
-.ir{
-  position:absolute;inset:-12px;border-radius:50%;
-  border:1.5px solid rgba(18,82,163,0.12);
-  animation:imic-ring 2.5s ease-out infinite;
-}
+.ir{position:absolute;inset:-12px;border-radius:50%;border:1.5px solid rgba(18,82,163,0.12);animation:imic-ring 2.5s ease-out infinite;}
 @keyframes imic-ring{0%{transform:scale(1);opacity:0.5;}100%{transform:scale(1.35);opacity:0;}}
-.imic.on .ir{border-color:rgba(217,45,32,0.2);}
-
-.imic{
-  width:70px;height:70px;border-radius:50%;
-  background:linear-gradient(135deg,var(--blue),var(--blue2));
-  border:none;font-size:26px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 6px 20px rgba(18,82,163,0.35);
-  transition:all .25s;z-index:1;position:relative;
-}
+.imic{width:70px;height:70px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--blue2));border:none;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(18,82,163,0.35);transition:all .25s;z-index:1;position:relative;}
 .imic:hover{transform:scale(1.04);}
-.imic.on{
-  background:linear-gradient(135deg,var(--red),#B91C1C);
-  box-shadow:0 6px 20px rgba(217,45,32,0.4);
-  animation:mic-pulse .85s ease-in-out infinite;
-}
+.imic.on{background:linear-gradient(135deg,var(--red),#B91C1C);box-shadow:0 6px 20px rgba(217,45,32,0.4);animation:mic-pulse .85s ease-in-out infinite;}
 .mstat{font-size:13px;font-weight:500;color:var(--text2);}
 .mstat.on{color:var(--red);font-weight:600;}
-
-.mobbar{
-  width:100%;max-width:320px;
-  background:var(--bg);border:2px solid var(--blue-mid);
-  border-radius:var(--radius3);padding:10px 16px;
-  font-family:'Plus Jakarta Sans',monospace;
-  font-weight:700;font-size:20px;letter-spacing:4px;
-  text-align:center;color:var(--blue);display:none;
-}
+.mobbar{width:100%;max-width:320px;background:var(--bg);border:2px solid var(--blue-mid);border-radius:var(--radius3);padding:10px 16px;font-family:'Plus Jakarta Sans',monospace;font-weight:700;font-size:20px;letter-spacing:4px;text-align:center;color:var(--blue);display:none;}
 .mobbar.show{display:block;}
-
 .keypad-wrap{display:none;width:100%;max-width:320px;flex-direction:column;gap:8px;}
 .keypad-wrap.show{display:flex;}
 .keypad-row{display:flex;gap:8px;justify-content:center;}
-.kbtn{
-  width:88px;height:48px;border-radius:var(--radius3);
-  border:1.5px solid var(--border);background:var(--white);
-  font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;font-size:20px;
-  cursor:pointer;color:var(--text);transition:all .15s;
-  box-shadow:0 2px 6px rgba(18,82,163,0.06);
-}
+.kbtn{width:88px;height:48px;border-radius:var(--radius3);border:1.5px solid var(--border);background:var(--white);font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;font-size:20px;cursor:pointer;color:var(--text);transition:all .15s;box-shadow:0 2px 6px rgba(18,82,163,0.06);}
 .kbtn:hover{background:var(--blue-light);border-color:var(--blue-mid);color:var(--blue);}
 .kbtn:active{transform:scale(0.93);}
 .kbtn.del{font-size:15px;color:var(--red);border-color:rgba(217,45,32,0.2);}
-.kbtn.del:hover{background:var(--red-light);}
-.kbtn.ok{
-  background:linear-gradient(135deg,var(--blue),var(--blue2));
-  color:#fff;border-color:transparent;
-  box-shadow:0 4px 14px rgba(18,82,163,0.3);
-}
-.kbtn.ok:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(18,82,163,0.4);}
-
-/* ══════════════════════════════════════════
-   CONFIRM SCREEN
-══════════════════════════════════════════ */
+.kbtn.ok{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border-color:transparent;box-shadow:0 4px 14px rgba(18,82,163,0.3);}
 #sc{background:var(--bg);padding:16px;overflow-y:auto;align-items:center;justify-content:center;}
-.ccard{
-  background:var(--white);border-radius:var(--radius);
-  border:1px solid var(--border);
-  box-shadow:var(--shadow2);
-  width:100%;max-width:560px;overflow:hidden;
-  margin:auto;
-}
-.chead{
-  background:linear-gradient(135deg,var(--blue-light),#F0F8FF);
-  border-bottom:1px solid var(--border);padding:22px 26px;
-}
-.chead-badge{
-  display:inline-flex;align-items:center;gap:6px;
-  background:var(--blue);color:#fff;
-  font-size:11px;font-weight:700;letter-spacing:0.5px;
-  padding:4px 11px;border-radius:20px;text-transform:uppercase;
-  margin-bottom:10px;
-}
+.ccard{background:var(--white);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow2);width:100%;max-width:560px;overflow:hidden;margin:auto;}
+.chead{background:linear-gradient(135deg,var(--blue-light),#F0F8FF);border-bottom:1px solid var(--border);padding:22px 26px;}
+.chead-badge{display:inline-flex;align-items:center;gap:6px;background:var(--blue);color:#fff;font-size:11px;font-weight:700;letter-spacing:0.5px;padding:4px 11px;border-radius:20px;text-transform:uppercase;margin-bottom:10px;}
 .chead-t{font-family:'Plus Jakarta Sans',sans-serif;font-size:19px;font-weight:700;color:var(--text);}
 .chead-s{font-size:13px;color:var(--text2);margin-top:3px;}
 .crows{padding:18px 26px;display:flex;flex-direction:column;gap:9px;}
-.crow{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:11px 14px;background:var(--bg);
-  border:1px solid var(--border);border-radius:var(--radius3);
-  transition:border-color .2s;
-}
-.crow:hover{border-color:var(--border2);}
+.crow{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius3);}
 .crow-l{font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:1px;}
 .crow-v{font-weight:600;font-size:14px;color:var(--text);margin-top:2px;}
-.crow-edit{
-  background:none;border:1.5px solid var(--border);
-  border-radius:7px;padding:5px 11px;
-  font-size:12px;color:var(--blue);cursor:pointer;
-  font-weight:600;font-family:'Inter',sans-serif;transition:all .2s;
-}
-.crow-edit:hover{background:var(--blue-light);border-color:var(--blue-mid);}
+.crow-edit{background:none;border:1.5px solid var(--border);border-radius:7px;padding:5px 11px;font-size:12px;color:var(--blue);cursor:pointer;font-weight:600;font-family:'Inter',sans-serif;transition:all .2s;}
 .clang-msg{text-align:center;padding:0 26px 14px;font-size:13px;color:var(--text2);}
 .cbtns{display:flex;gap:11px;padding:0 26px 22px;}
-.cbtn{
-  flex:1;padding:14px;border-radius:var(--radius2);border:none;
-  cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;
-  font-weight:700;font-size:14px;transition:all .2s;
-}
-.cbtn-confirm{
-  background:linear-gradient(135deg,var(--green),#00785A);
-  color:#fff;box-shadow:0 4px 14px rgba(0,147,107,0.3);
-}
-.cbtn-confirm:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,147,107,0.4);}
-.cbtn-back{
-  background:var(--white);color:var(--text2);
-  border:1.5px solid var(--border);
-}
-.cbtn-back:hover{border-color:var(--border2);color:var(--blue);}
-
-/* ══════════════════════════════════════════
-   EMERGENCY SCREEN
-══════════════════════════════════════════ */
+.cbtn{flex:1;padding:14px;border-radius:var(--radius2);border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14px;transition:all .2s;}
+.cbtn-confirm{background:linear-gradient(135deg,var(--green),#00785A);color:#fff;box-shadow:0 4px 14px rgba(0,147,107,0.3);}
+.cbtn-back{background:var(--white);color:var(--text2);border:1.5px solid var(--border);}
 #se{background:linear-gradient(135deg,#FEF0EE,#FFF5F5);}
-.e-top-bar{
-  position:fixed;top:3px;left:0;right:0;height:5px;
-  background:var(--red);
-  animation:e-strobe .6s ease-in-out infinite;
-}
+.e-top-bar{position:fixed;top:3px;left:0;right:0;height:5px;background:var(--red);animation:e-strobe .6s ease-in-out infinite;}
 @keyframes e-strobe{0%,100%{opacity:1;}50%{opacity:0.2;}}
-.ecard{
-  background:var(--white);border-radius:var(--radius);
-  border:2px solid rgba(217,45,32,0.3);
-  box-shadow:0 12px 48px rgba(217,45,32,0.2);
-  padding:40px 48px;text-align:center;
-  display:flex;flex-direction:column;align-items:center;gap:20px;
-  max-width:440px;width:100%;
-  animation:card-enter .4s ease;
-}
-.eico{font-size:64px;animation:shk .5s infinite;filter:drop-shadow(0 4px 12px rgba(217,45,32,0.3));}
+.ecard{background:var(--white);border-radius:var(--radius);border:2px solid rgba(217,45,32,0.3);box-shadow:0 12px 48px rgba(217,45,32,0.2);padding:40px 48px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:20px;max-width:440px;width:100%;}
+.eico{font-size:64px;animation:shk .5s infinite;}
 @keyframes shk{0%,100%{transform:translateX(0);}25%{transform:translateX(-7px);}75%{transform:translateX(7px);}}
-.etit{
-  font-family:'Plus Jakarta Sans',sans-serif;
-  font-size:clamp(24px,4vw,36px);font-weight:800;color:var(--red);
-}
+.etit{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(24px,4vw,36px);font-weight:800;color:var(--red);}
 .esub{font-size:15px;color:var(--text2);}
-.efl{
-  background:var(--red-light);border:2px solid rgba(217,45,32,0.25);
-  border-radius:16px;padding:20px 40px;text-align:center;width:100%;
-}
+.efl{background:var(--red-light);border:2px solid rgba(217,45,32,0.25);border-radius:16px;padding:20px 40px;text-align:center;width:100%;}
 .efl-l{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(217,45,32,0.7);font-weight:700;}
-.efl-n{
-  font-family:'Plus Jakarta Sans',sans-serif;
-  font-size:80px;font-weight:800;color:var(--red);line-height:1;
-}
+.efl-n{font-family:'Plus Jakarta Sans',sans-serif;font-size:80px;font-weight:800;color:var(--red);line-height:1;}
 .efl-w{font-size:14px;color:var(--text2);margin-top:4px;}
-
-/* ══════════════════════════════════════════
-   RECEIPT SCREEN
-══════════════════════════════════════════ */
-#sr2{
-  background:var(--bg);
-  flex-direction:column;gap:14px;padding:16px;
-  overflow-y:auto;align-items:center;
-}
-
-.rcard{
-  background:var(--white);border-radius:var(--radius);
-  border:1px solid var(--border);box-shadow:var(--shadow2);
-  width:100%;max-width:580px;overflow:hidden;
-}
-
-/* Receipt header */
-.rhead{
-  background:linear-gradient(135deg,var(--blue),var(--blue2));
-  padding:20px 26px;
-  display:flex;align-items:center;justify-content:space-between;
-}
+#sr2{background:var(--bg);flex-direction:column;gap:14px;padding:16px;overflow-y:auto;align-items:center;}
+.rcard{background:var(--white);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow2);width:100%;max-width:580px;overflow:hidden;}
+.rhead{background:linear-gradient(135deg,var(--blue),var(--blue2));padding:20px 26px;display:flex;align-items:center;justify-content:space-between;}
 .rlogo{font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:800;color:#fff;}
 .rlogo span{color:#93C5FD;}
 .rreg{text-align:right;}
 .rreg-l{font-size:10px;letter-spacing:1px;color:rgba(255,255,255,0.65);text-transform:uppercase;font-weight:600;}
-.rreg strong{
-  display:block;font-size:13px;font-weight:700;
-  color:#fff;margin-top:3px;letter-spacing:1px;
-  font-family:'Plus Jakarta Sans',monospace;
-}
-
-/* Dept section */
-.rdrow{
-  background:var(--blue-light);
-  border-bottom:1px solid var(--border);
-  padding:18px 26px;
-  display:flex;align-items:center;justify-content:space-between;
-}
+.rreg strong{display:block;font-size:13px;font-weight:700;color:#fff;margin-top:3px;letter-spacing:1px;font-family:'Plus Jakarta Sans',monospace;}
+.rdrow{background:var(--blue-light);border-bottom:1px solid var(--border);padding:18px 26px;display:flex;align-items:center;justify-content:space-between;}
 .rdname{font-family:'Plus Jakarta Sans',sans-serif;font-size:21px;font-weight:700;color:var(--blue);}
 .rddoc{font-size:12px;color:var(--text2);margin-top:3px;}
 .rflb{text-align:right;}
 .rfll{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);font-weight:600;}
-.rfln{
-  font-family:'Plus Jakarta Sans',sans-serif;
-  font-size:72px;font-weight:800;color:var(--blue);line-height:0.9;
-}
+.rfln{font-family:'Plus Jakarta Sans',sans-serif;font-size:72px;font-weight:800;color:var(--blue);line-height:0.9;}
 .rflw{font-size:11px;color:var(--text2);margin-top:2px;}
-
-/* Token number — new enhancement */
-.rtoken{
-  background:linear-gradient(135deg,var(--green-light),#F0FAF6);
-  border-bottom:1px solid var(--border);
-  padding:12px 26px;
-  display:flex;align-items:center;justify-content:space-between;
-}
+.rtoken{background:linear-gradient(135deg,var(--green-light),#F0FAF6);border-bottom:1px solid var(--border);padding:12px 26px;display:flex;align-items:center;justify-content:space-between;}
 .rtoken-l{font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:1px;}
 .rtoken-n{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:800;color:var(--green);}
 .rtoken-w{font-size:12px;color:var(--text2);}
-
 .rbody{padding:14px 26px;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .rf{display:flex;flex-direction:column;gap:4px;}
 .rf.full{grid-column:1/-1;}
 .rfl2{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);font-weight:600;}
 .rfv{font-weight:600;font-size:14px;color:var(--text);}
-
 .spills{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;}
-.spill{
-  background:var(--blue-light);color:var(--blue);
-  font-size:12px;font-weight:600;
-  padding:3px 11px;border-radius:18px;
-  border:1px solid var(--blue-mid);
-}
-
-.rfoot{
-  padding:11px 26px;background:var(--bg2);
-  border-top:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;
-}
+.spill{background:var(--blue-light);color:var(--blue);font-size:12px;font-weight:600;padding:3px 11px;border-radius:18px;border:1px solid var(--blue-mid);}
+.rfoot{padding:11px 26px;background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
 .rtime{font-size:11px;color:var(--text3);}
 .pb{padding:4px 13px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;}
 .pb.norm{background:var(--green-light);color:var(--green);border:1px solid rgba(0,147,107,0.2);}
 .pb.hi{background:var(--red-light);color:var(--red);border:1px solid rgba(217,45,32,0.2);}
-
-/* Action buttons */
 .ract{display:flex;gap:10px;width:100%;max-width:580px;}
-.abtn{
-  flex:1;padding:14px;border-radius:var(--radius2);border:none;
-  cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;
-  font-weight:700;font-size:14px;
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  transition:all .2s;
-}
-.aprint{
-  background:var(--white);color:var(--blue);
-  border:2px solid var(--blue-mid);
-  box-shadow:var(--shadow);
-}
-.aprint:hover{background:var(--blue-light);}
-.adl{
-  background:linear-gradient(135deg,var(--blue),var(--blue2));
-  color:#fff;box-shadow:0 4px 14px rgba(18,82,163,0.3);
-}
-.adl:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(18,82,163,0.4);}
-
+.abtn{flex:1;padding:14px;border-radius:var(--radius2);border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;}
+.aprint{background:var(--white);color:var(--blue);border:2px solid var(--blue-mid);box-shadow:var(--shadow);}
+.adl{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;box-shadow:0 4px 14px rgba(18,82,163,0.3);}
 .cdwrap{width:100%;max-width:580px;}
 .cdi{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:5px;}
 .cdt{height:4px;background:var(--border);border-radius:4px;overflow:hidden;}
 .cdf{height:100%;background:linear-gradient(90deg,var(--blue),var(--blue2));border-radius:4px;transition:width 1s linear;}
-
-/* ══════════════════════════════════════════
-   OVERLAY & TOAST
-══════════════════════════════════════════ */
-.ovl{
-  position:fixed;inset:0;z-index:200;
-  background:rgba(238,244,251,0.88);
-  backdrop-filter:blur(6px);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
-  opacity:0;pointer-events:none;transition:opacity .3s;
-}
+.ovl{position:fixed;inset:0;z-index:200;background:rgba(238,244,251,0.88);backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;opacity:0;pointer-events:none;transition:opacity .3s;}
 .ovl.show{opacity:1;pointer-events:all;}
 .spin{width:48px;height:48px;border-radius:50%;border:4px solid var(--border);border-top-color:var(--blue);animation:sp .75s linear infinite;}
 @keyframes sp{to{transform:rotate(360deg);}}
 .ovt{font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;font-size:15px;color:var(--text2);}
-
-.toast{
-  position:fixed;bottom:22px;left:50%;
-  transform:translateX(-50%) translateY(10px);
-  background:var(--text);color:#fff;
-  padding:10px 22px;border-radius:30px;
-  font-size:13px;font-weight:500;z-index:300;
-  opacity:0;transition:all .3s;pointer-events:none;
-  white-space:nowrap;box-shadow:0 4px 20px rgba(15,33,55,0.3);
-}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--text);color:#fff;padding:10px 22px;border-radius:30px;font-size:13px;font-weight:500;z-index:300;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px rgba(15,33,55,0.3);}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-
-/* ══════════════════════════════════════════
-   PRINT
-══════════════════════════════════════════ */
-@media print{
-  body{background:#fff !important;}
-  body::before{display:none;}
-  body *{visibility:hidden;}
-  .rcard,.rcard *{visibility:visible;}
-  .rcard{position:fixed;inset:0;width:100%;box-shadow:none;border-radius:0;}
-}
+@media print{body{background:#fff !important;}body *{visibility:hidden;}.rcard,.rcard *{visibility:visible;}.rcard{position:fixed;inset:0;width:100%;box-shadow:none;border-radius:0;}}
 </style>
 </head>
 <body>
 
-<!-- ══════ WELCOME ══════ -->
 <div class="screen active" id="sw">
   <div class="wcard">
-    <div class="wlogo-wrap">
-      <div class="wlogo">🏥</div>
-
-    </div>
+    <div class="wlogo-wrap"><div class="wlogo">🏥</div></div>
     <div class="wtit"><span class="v">Voice</span>Byte</div>
-
-    <!-- EKG line -->
     <div class="ekg-wrap">
       <svg class="ekg-svg" viewBox="0 0 800 36" preserveAspectRatio="none">
         <polyline points="0,18 80,18 100,18 110,4 120,32 130,18 140,18 220,18 240,18 250,4 260,32 270,18 280,18 360,18 380,18 390,4 400,32 410,18 420,18 500,18 520,18 530,4 540,32 550,18 560,18 640,18 660,18 670,4 680,32 690,18 700,18 800,18"
           fill="none" stroke="#1A6FD4" stroke-width="1.5" opacity="0.35"/>
       </svg>
     </div>
-
     <p class="wsub">AI-powered hospital self-registration.<br>Speak in your language — we understand you.</p>
-
     <div class="wlangs">
-      <span class="wlang">English</span>
-      <span class="wlang">हिंदी</span>
-      <span class="wlang">తెలుగు</span>
-      <span class="wlang">தமிழ்</span>
-      <span class="wlang">മലയാളം</span>
+      <span class="wlang">English</span><span class="wlang">हिंदी</span>
+      <span class="wlang">తెలుగు</span><span class="wlang">தமிழ்</span><span class="wlang">മലയാളം</span>
     </div>
-
     <button class="sbtn" id="startBtn">🎤 &nbsp;Start Voice Registration</button>
     <p class="wfoot">City General Hospital &nbsp;·&nbsp; Powered by VoiceByte AI</p>
   </div>
 </div>
 
-<!-- ══════ DETECT LANGUAGE ══════ -->
 <div class="screen" id="sd">
   <div class="dcard">
     <div class="dmic-zone">
-      <div class="dring"></div>
-      <div class="dring"></div>
-      <div class="dring"></div>
+      <div class="dring"></div><div class="dring"></div><div class="dring"></div>
       <button class="dmic" id="dmic">🎤</button>
     </div>
     <div class="swave" id="soundwave">
@@ -713,7 +228,7 @@ body{
       <div class="sb"></div><div class="sb"></div>
     </div>
     <div class="dtit">Speak a few words</div>
-    <p class="dsub">Say anything in your language.<br>We detect it automatically — no selection needed.</p>
+    <p class="dsub">Say anything in your language.<br>We detect it automatically.</p>
     <div class="lpills">
       <span class="lpill" id="lp-en">English</span>
       <span class="lpill" id="lp-hi">हिंदी</span>
@@ -725,7 +240,6 @@ body{
   </div>
 </div>
 
-<!-- ══════ INTAKE CHAT ══════ -->
 <div class="screen" id="si">
   <div class="iwrap">
     <div class="topbar">
@@ -744,26 +258,11 @@ body{
     </div>
     <div class="stepbar">
       <div class="srow">
-        <div class="si-el active" id="si-1">
-          <div class="sico">👤</div>
-          <div class="slabel">Name</div>
-        </div>
-        <div class="si-el" id="si-2">
-          <div class="sico">🎂</div>
-          <div class="slabel">Age</div>
-        </div>
-        <div class="si-el" id="si-3">
-          <div class="sico">📱</div>
-          <div class="slabel">Mobile</div>
-        </div>
-        <div class="si-el" id="si-4">
-          <div class="sico">🏥</div>
-          <div class="slabel">Symptoms</div>
-        </div>
-        <div class="si-el" id="si-5">
-          <div class="sico">📅</div>
-          <div class="slabel">Duration</div>
-        </div>
+        <div class="si-el active" id="si-1"><div class="sico">👤</div><div class="slabel">Name</div></div>
+        <div class="si-el" id="si-2"><div class="sico">🎂</div><div class="slabel">Age</div></div>
+        <div class="si-el" id="si-3"><div class="sico">📱</div><div class="slabel">Mobile</div></div>
+        <div class="si-el" id="si-4"><div class="sico">🏥</div><div class="slabel">Symptoms</div></div>
+        <div class="si-el" id="si-5"><div class="sico">📅</div><div class="slabel">Duration</div></div>
       </div>
       <div class="chint">✅ Tap any completed step to correct it</div>
     </div>
@@ -800,7 +299,6 @@ body{
   </div>
 </div>
 
-<!-- ══════ CONFIRM ══════ -->
 <div class="screen" id="sc">
   <div style="width:100%;max-width:520px;margin:auto;">
     <div class="ccard">
@@ -819,7 +317,6 @@ body{
   </div>
 </div>
 
-<!-- ══════ EMERGENCY ══════ -->
 <div class="screen" id="se">
   <div class="e-top-bar"></div>
   <div class="ecard">
@@ -834,15 +331,11 @@ body{
   </div>
 </div>
 
-<!-- ══════ RECEIPT ══════ -->
 <div class="screen" id="sr2">
   <div class="rcard" id="rcard">
     <div class="rhead">
       <div class="rlogo">Voice<span>Byte</span></div>
-      <div class="rreg">
-        <div class="rreg-l">Registration No.</div>
-        <strong id="r-reg">—</strong>
-      </div>
+      <div class="rreg"><div class="rreg-l">Registration No.</div><strong id="r-reg">—</strong></div>
     </div>
     <div class="rdrow">
       <div>
@@ -855,8 +348,7 @@ body{
         <div class="rflw" id="r-flw">First Floor</div>
       </div>
     </div>
-    <!-- Multiple departments section -->
-    <div id="r-multidept" style="display:none;margin:10px 0;padding:10px;background:#f0f4ff;border-radius:10px;border-left:4px solid #3B82F6;">
+    <div id="r-multidept" style="display:none;margin:10px 16px;padding:10px;background:#f0f4ff;border-radius:10px;border-left:4px solid #3B82F6;">
       <div style="font-size:11px;font-weight:700;color:#1252A3;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">📋 Also Visit</div>
       <div id="r-multidept-list"></div>
     </div>
@@ -865,7 +357,7 @@ body{
         <div class="rtoken-l">🎫 Token Number</div>
         <div class="rtoken-n" id="r-token">—</div>
       </div>
-      <div class="rtoken-w" id="r-wait">Please proceed to the department</div>
+      <div class="rtoken-w" id="r-wait">Show this token at the department counter</div>
     </div>
     <div class="rbody">
       <div class="rf"><div class="rfl2">Patient Name</div><div class="rfv" id="r-name">—</div></div>
@@ -885,187 +377,114 @@ body{
     <button class="abtn adl" onclick="doDownload()">⬇️ &nbsp;Download</button>
   </div>
   <div class="cdwrap">
-    <div class="cdi">
-      <span id="cdmsg">Session expires after print/download</span>
-      <span id="cdnum"></span>
-    </div>
+    <div class="cdi"><span id="cdmsg">Session expires after print/download</span><span id="cdnum"></span></div>
     <div class="cdt"><div class="cdf" id="cdf" style="width:0%"></div></div>
   </div>
 </div>
 
-<!-- Overlay + Toast -->
 <div class="ovl" id="ovl"><div class="spin"></div><div class="ovt" id="ovmsg">Processing…</div></div>
 <div class="toast" id="toast"></div>
 
 <script>
-// Auto-detect backend URL — works both locally and on Render
 const BACKEND = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')
   ? 'http://127.0.0.1:5000'
-  : window.location.origin;  // On Render: uses same server URL automatically
+  : window.location.origin;
 
-// Soundwave toggle
 function setSoundwave(on){ document.getElementById('soundwave').classList.toggle('on', on); }
-
-// Progress bar update
 function updateProgress(idx){
   const pct = Math.round((idx / 5) * 100);
   document.getElementById('prog-fill').style.width = pct + '%';
   document.getElementById('prog-pct').textContent = pct + '%';
-  document.getElementById('prog-label').textContent = idx < 5
-    ? 'Step ' + (idx + 1) + ' of 5'
-    : 'All steps complete';
+  document.getElementById('prog-label').textContent = idx < 5 ? 'Step ' + (idx + 1) + ' of 5' : 'All steps complete';
 }
 
-// ── MULTILINGUAL PHRASES ──
 const P = {
   English:{
     q:['What is your full name?','How old are you?','Please say your 10-digit mobile number digit by digit.','Please describe your health problem or symptoms.','How many days have you had this problem?'],
     retry:'Sorry, I did not understand. Please tap the mic and speak again.',
-    confirm_title:'Please confirm your details',
-    confirm_sub:'Check below and tap Edit to correct anything',
-    confirm_msg:'If all details are correct, tap Confirm to proceed.',
-    confirm_btn:'Confirm and Proceed',
-    labels:['Name','Age','Mobile','Symptoms','Duration'],
-    floor_msg:'Please go to floor number '
+    confirm_title:'Please confirm your details',confirm_sub:'Check below and tap Edit to correct anything',
+    confirm_msg:'If all details are correct, tap Confirm to proceed.',confirm_btn:'Confirm and Proceed',
+    labels:['Name','Age','Mobile','Symptoms','Duration'],floor_msg:'Please go to floor number '
   },
   Hindi:{
     q:['आपका पूरा नाम क्या है?','आपकी उम्र क्या है?','कृपया अपना 10 अंकों का मोबाइल नंबर बोलें।','अपनी बीमारी या लक्षण बताएं।','कितने दिनों से यह समस्या है?'],
     retry:'माफ करें, समझ नहीं आया। माइक दबाएं और फिर बोलें।',
-    confirm_title:'कृपया अपने विवरण की पुष्टि करें',
-    confirm_sub:'नीचे देखें और गलत जानकारी सुधारें',
-    confirm_msg:'अगर सब सही है तो आगे बढ़ने के लिए पुष्टि करें।',
-    confirm_btn:'पुष्टि करें',
-    labels:['नाम','उम्र','मोबाइल','लक्षण','अवधि'],
-    floor_msg:'कृपया मंजिल नंबर जाएं '
+    confirm_title:'कृपया अपने विवरण की पुष्टि करें',confirm_sub:'नीचे देखें और गलत जानकारी सुधारें',
+    confirm_msg:'अगर सब सही है तो आगे बढ़ने के लिए पुष्टि करें।',confirm_btn:'पुष्टि करें',
+    labels:['नाम','उम्र','मोबाइल','लक्षण','अवधि'],floor_msg:'कृपया मंजिल नंबर जाएं '
   },
   Telugu:{
     q:['మీ పూర్తి పేరు చెప్పండి.','మీ వయసు ఎంత?','మీ 10 అంకెల మొబైల్ నంబర్ చెప్పండి.','మీ అనారోగ్యం లేదా లక్షణాలు చెప్పండి.','ఎన్ని రోజులుగా ఈ సమస్య ఉంది?'],
     retry:'క్షమించండి, అర్థం కాలేదు. మైక్ నొక్కి మళ్ళీ చెప్పండి.',
-    confirm_title:'దయచేసి మీ వివరాలు నిర్ధారించండి',
-    confirm_sub:'దిగువ చూసి తప్పులు సరిచేయండి',
-    confirm_msg:'అన్నీ సరైనవైతే నిర్ధారించు నొక్కండి.',
-    confirm_btn:'నిర్ధారించు',
-    labels:['పేరు','వయసు','మొబైల్','లక్షణాలు','వ్యవధి'],
-    floor_msg:'దయచేసి అంతస్తు నంబర్ కి వెళ్ళండి '
+    confirm_title:'దయచేసి మీ వివరాలు నిర్ధారించండి',confirm_sub:'దిగువ చూసి తప్పులు సరిచేయండి',
+    confirm_msg:'అన్నీ సరైనవైతే నిర్ధారించు నొక్కండి.',confirm_btn:'నిర్ధారించు',
+    labels:['పేరు','వయసు','మొబైల్','లక్షణాలు','వ్యవధి'],floor_msg:'దయచేసి అంతస్తు నంబర్ కి వెళ్ళండి '
   },
   Tamil:{
     q:['உங்கள் முழு பெயர் சொல்லுங்கள்.','உங்கள் வயது என்ன?','உங்கள் 10 இலக்க மொபைல் எண் சொல்லுங்கள்.','உங்கள் உடல்நல பிரச்சனை அல்லது அறிகுறிகளை சொல்லுங்கள்.','எத்தனை நாட்களாக இந்த பிரச்சனை இருக்கிறது?'],
     retry:'மன்னிக்கவும், புரியவில்லை. மைக்கை அழுத்தி மீண்டும் சொல்லுங்கள்.',
-    confirm_title:'உங்கள் விவரங்களை உறுதிப்படுத்துங்கள்',
-    confirm_sub:'கீழே பார்த்து தவறுகளை திருத்துங்கள்',
-    confirm_msg:'அனைத்தும் சரியாக இருந்தால் உறுதிப்படுத்துங்கள்.',
-    confirm_btn:'உறுதிப்படுத்து',
-    labels:['பெயர்','வயது','மொபைல்','அறிகுறிகள்','காலம்'],
-    floor_msg:'தயவுசெய்து தளம் எண்ணுக்கு செல்லுங்கள் '
+    confirm_title:'உங்கள் விவரங்களை உறுதிப்படுத்துங்கள்',confirm_sub:'கீழே பார்த்து தவறுகளை திருத்துங்கள்',
+    confirm_msg:'அனைத்தும் சரியாக இருந்தால் உறுதிப்படுத்துங்கள்.',confirm_btn:'உறுதிப்படுத்து',
+    labels:['பெயர்','வயது','மொபைல்','அறிகுறிகள்','காலம்'],floor_msg:'தயவுசெய்து தளம் எண்ணுக்கு செல்லுங்கள் '
   },
   Malayalam:{
     q:['നിങ്ങളുടെ പൂർണ്ണ പേര് പറയൂ.','നിങ്ങൾക്ക് എത്ര വയസ്സ്?','നിങ്ങളുടെ 10 അക്ക മൊബൈൽ നമ്പർ ഓരോ അക്കമായി പറയൂ.','നിങ്ങളുടെ ആരോഗ്യ പ്രശ്നം അല്ലെങ്കിൽ ലക്ഷണങ്ങൾ പറയൂ.','എത്ര ദിവസമായി ഈ പ്രശ്നം ഉണ്ട്?'],
     retry:'ക്ഷമിക്കൂ, മനസ്സിലായില്ല. മൈക്ക് ടാപ്പ് ചെയ്ത് വീണ്ടും പറയൂ.',
-    confirm_title:'നിങ്ങളുടെ വിവരങ്ങൾ സ്ഥിരീകരിക്കൂ',
-    confirm_sub:'താഴെ പരിശോധിച്ച് തെറ്റുകൾ തിരുത്തൂ',
-    confirm_msg:'എല്ലാം ശരിയാണെങ്കിൽ സ്ഥിരീകരിക്കൂ.',
-    confirm_btn:'സ്ഥിരീകരിക്കൂ',
-    labels:['പേര്','പ്രായം','മൊബൈൽ','ലക്ഷണങ്ങൾ','ദൈർഘ്യം'],
-    floor_msg:'ദയവായി നില നമ്പർ ലേക്ക് പോകൂ '
+    confirm_title:'നിങ്ങളുടെ വിവരങ്ങൾ സ്ഥിരീകരിക്കൂ',confirm_sub:'താഴെ പരിശോധിച്ച് തെറ്റുകൾ തിരുത്തൂ',
+    confirm_msg:'എല്ലാം ശരിയാണെങ്കിൽ സ്ഥിരീകരിക്കൂ.',confirm_btn:'സ്ഥിരീകരിക്കൂ',
+    labels:['പേര്','പ്രായം','മൊബൈൽ','ലക്ഷണങ്ങൾ','ദൈർഘ്യം'],floor_msg:'ദയവായി നില നമ്പർ ലേക്ക് പോകൂ '
   }
 };
 function ph(){ return P[S.lang]||P.English; }
 
-const KEYS  = ['name','age','mobile','symptoms','days'];
-const SICOS = ['👤','🎂','📱','🏥','📅'];
-const SLBLS = ['Name','Age','Mobile','Symptoms','Duration'];
+const KEYS=['name','age','mobile','symptoms','days'];
+const SICOS=['👤','🎂','📱','🏥','📅'];
 
-const W2D = {
-  zero:'0',one:'1',two:'2',three:'3',four:'4',five:'5',six:'6',seven:'7',eight:'8',nine:'9',
-  shunya:'0',ek:'1',do:'2',teen:'3',char:'4',paanch:'5',chhe:'6',saat:'7',aath:'8',nau:'9',
-  sunna:'0',okati:'1',rendu:'2',madu:'3',nalugu:'4',ayidu:'5',aaru:'6',edu:'7',enimidi:'8',tommidi:'9'
-};
-function digits(t){
-  let s=t.toLowerCase();
-  for(const[w,d] of Object.entries(W2D)) s=s.replace(new RegExp('\\b'+w+'\\b','g'),d);
-  return s.replace(/[^0-9]/g,'');
-}
+const W2D={zero:'0',one:'1',two:'2',three:'3',four:'4',five:'5',six:'6',seven:'7',eight:'8',nine:'9',shunya:'0',ek:'1',do:'2',teen:'3',char:'4',paanch:'5',chhe:'6',saat:'7',aath:'8',nau:'9',sunna:'0',okati:'1',rendu:'2',madu:'3',nalugu:'4',ayidu:'5',aaru:'6',edu:'7',enimidi:'8',tommidi:'9'};
+function digits(t){let s=t.toLowerCase();for(const[w,d] of Object.entries(W2D))s=s.replace(new RegExp('\\b'+w+'\\b','g'),d);return s.replace(/[^0-9]/g,'');}
 
-const S={lang:'English',step:0,name:'',age:'',mobile:'',symptoms:'',days:'',
-  department:'',floor:1,floorWord:'',doctor:'',keywords:[],emergency:false,reg:'',all_departments:[]};
+const S={lang:'English',step:0,name:'',age:'',mobile:'',symptoms:'',days:'',department:'',floor:1,floorWord:'',doctor:'',keywords:[],emergency:false,reg:'',all_departments:[]};
 
-// ── UTILS ──
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
 function overlay(on,msg){document.getElementById('ovl').classList.toggle('show',on);if(msg)document.getElementById('ovmsg').textContent=msg;}
 function toast(m,d=3000){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),d);}
 function ts(){const d=new Date();return d.getHours()+':'+String(d.getMinutes()).padStart(2,'0')+' '+(d.getHours()<12?'am':'pm');}
 
-// ── CHAT ──
 function botMsg(html,typing=false){
   const c=document.getElementById('chat');
-  if(typing){
-    const r=document.createElement('div');r.className='brow bot';r.id='trow';
-    r.innerHTML='<div class="av bav">🤖</div><div class="tbbl"><div class="td"></div><div class="td"></div><div class="td"></div></div>';
-    c.appendChild(r);c.scrollTop=c.scrollHeight;return;
-  }
-  const r=document.createElement('div');r.className='brow bot';
-  r.innerHTML='<div class="av bav">🤖</div><div class="bbl bot">'+html+'<div class="btime">'+ts()+'</div></div>';
+  if(typing){const r=document.createElement('div');r.className='brow bot';r.id='trow';r.innerHTML='<div class="av bav">🤖</div><div class="tbbl"><div class="td"></div><div class="td"></div><div class="td"></div></div>';c.appendChild(r);c.scrollTop=c.scrollHeight;return;}
+  const r=document.createElement('div');r.className='brow bot';r.innerHTML='<div class="av bav">🤖</div><div class="bbl bot">'+html+'<div class="btime">'+ts()+'</div></div>';
   c.appendChild(r);c.scrollTop=c.scrollHeight;
 }
 function rmTyping(){const e=document.getElementById('trow');if(e)e.remove();}
-function userMsg(t){
-  const c=document.getElementById('chat');
-  const r=document.createElement('div');r.className='brow usr';
-  r.innerHTML='<div class="bbl usr">'+t+'<div class="btime">'+ts()+'</div></div><div class="av uav">👤</div>';
-  c.appendChild(r);c.scrollTop=c.scrollHeight;
-}
+function userMsg(t){const c=document.getElementById('chat');const r=document.createElement('div');r.className='brow usr';r.innerHTML='<div class="bbl usr">'+t+'<div class="btime">'+ts()+'</div></div><div class="av uav">👤</div>';c.appendChild(r);c.scrollTop=c.scrollHeight;}
 
-// ── TTS ──
-let curAudio=null;
-// ── TTS using browser SpeechSynthesis (works on HTTPS, no autoplay block) ──
-// ── TTS: Browser SpeechSynthesis + gTTS for Telugu ──
+// ── TTS: Browser SpeechSynthesis for all, gTTS backend for Telugu ──
+// (Telugu has no browser voice on laptop — uses gTTS which works perfectly)
+let curAudio = null;
 var _synth = window.speechSynthesis;
 var curAudioEl = null;
+var SYNTH_LANG = {'English':'en-IN','Hindi':'hi-IN','Tamil':'ta-IN','Malayalam':'ml-IN','Telugu':'te-IN'};
 
-var SYNTH_LANG = {
-  'English':   'en-IN',
-  'Hindi':     'hi-IN',
-  'Tamil':     'ta-IN',
-  'Malayalam': 'ml-IN',
-  'Telugu':    'te-IN'
-};
-
-// Load voices early
 if(_synth){ _synth.getVoices(); }
 if(_synth){ _synth.onvoiceschanged = function(){ _synth.getVoices(); }; }
 
-function hasVoiceForLang(lang){
-  if(!_synth) return false;
-  var voices = _synth.getVoices();
-  var code = SYNTH_LANG[lang] || 'en-IN';
-  var langPrefix = code.split('-')[0];
-  for(var i=0;i<voices.length;i++){
-    if(voices[i].lang === code || voices[i].lang.startsWith(langPrefix)){
-      return true;
-    }
-  }
-  return false;
-}
-
 function speakBrowser(text, lang, cb){
+  if(!_synth){if(cb)cb();return;}
   _synth.cancel();
   var utt = new SpeechSynthesisUtterance(text);
-  utt.lang   = SYNTH_LANG[lang] || 'en-IN';
-  utt.rate   = 0.88;
-  utt.pitch  = 1.0;
-  utt.volume = 1.0;
+  utt.lang = SYNTH_LANG[lang]||'en-IN';
+  utt.rate=0.88; utt.pitch=1.0; utt.volume=1.0;
   var _d=false;
-  var done=function(){ if(_d)return;_d=true;if(cb)cb(); };
+  var done=function(){if(_d)return;_d=true;if(cb)cb();};
   utt.onend=done; utt.onerror=done;
-  setTimeout(function(){ _synth.speak(utt); }, 150);
+  setTimeout(function(){_synth.speak(utt);},150);
 }
 
 function speakGTTS(text, lang, cb){
   var _d=false;
-  var done=function(){ if(_d)return;_d=true;curAudioEl=null;if(cb)cb(); };
-  fetch(BACKEND+'/tts',{method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({text:text,lang:lang})})
+  var done=function(){if(_d)return;_d=true;curAudioEl=null;if(cb)cb();};
+  fetch(BACKEND+'/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:text,lang:lang})})
   .then(function(r){return r.blob();})
   .then(function(blob){
     var url=URL.createObjectURL(blob);
@@ -1073,26 +492,20 @@ function speakGTTS(text, lang, cb){
     a.onended=function(){URL.revokeObjectURL(url);done();};
     a.onerror=function(){URL.revokeObjectURL(url);done();};
     var p=a.play();
-    if(p!==undefined) p.catch(function(){
-      URL.revokeObjectURL(url); curAudioEl=null;
-      // gTTS blocked — try browser as last resort
-      speakBrowser(text, lang, cb);
-    });
+    if(p!==undefined) p.catch(function(){URL.revokeObjectURL(url);curAudioEl=null;speakBrowser(text,lang,cb);});
   })
-  .catch(function(){ speakBrowser(text,lang,cb); });
+  .catch(function(){speakBrowser(text,lang,cb);});
 }
 
 function speak(text, lang, cb){
   if(!text){if(cb)cb();return;}
   stopAudio();
-  // Telugu: always use gTTS (laptop has no te-IN voice)
-  // Others: use browser if voice available, else gTTS
-  if(lang === 'Telugu'){
-    speakGTTS(text, lang, cb);
-  } else if(hasVoiceForLang(lang)){
-    speakBrowser(text, lang, cb);
+  // Telugu → gTTS (perfect Telugu voice, no browser voice needed)
+  // All others → browser SpeechSynthesis (works on HTTPS, never blocked)
+  if(lang==='Telugu'){
+    speakGTTS(text,lang,cb);
   } else {
-    speakGTTS(text, lang, cb);
+    speakBrowser(text,lang,cb);
   }
 }
 
@@ -1107,22 +520,19 @@ function stepUI(idx,cls){
   el.className='si-el '+cls;
   if(cls==='done'){el.querySelector('.sico').textContent='✅';el.style.cursor='pointer';el.onclick=()=>reaskStep(idx);}
   else{el.style.cursor='';el.onclick=null;}
-  // Update progress
-  const done = document.querySelectorAll('.si-el.done').length;
-  updateProgress(cls==='done' ? done : idx);
+  const done=document.querySelectorAll('.si-el.done').length;
+  updateProgress(cls==='done'?done:idx);
 }
 
 // ── MIC STATUS ──
 function micReady(){document.getElementById('mbtn').classList.remove('on');const s=document.getElementById('mstat');s.className='mstat';s.textContent='👆 Tap mic to speak';}
 function micOn(){
   document.getElementById('mbtn').classList.add('on');
-  const s=document.getElementById('mstat');
-  s.className='mstat on';s.textContent='🔴 Listening… speak now';
-  // Ting sound using Web Audio API — works on laptop and phone
+  const s=document.getElementById('mstat');s.className='mstat on';s.textContent='🔴 Listening… speak now';
+  // Google-style ting sound using Web Audio API
   try{
     const ctx=new(window.AudioContext||window.webkitAudioContext)();
-    const o=ctx.createOscillator();
-    const g=ctx.createGain();
+    const o=ctx.createOscillator();const g=ctx.createGain();
     o.connect(g);g.connect(ctx.destination);
     o.type='sine';o.frequency.value=880;
     g.gain.setValueAtTime(0.3,ctx.currentTime);
@@ -1132,9 +542,7 @@ function micOn(){
 }
 function micBusy(){document.getElementById('mbtn').classList.remove('on');const s=document.getElementById('mstat');s.className='mstat';s.textContent='⏳ Processing…';}
 
-// ════════════════════════════════
-//  DETECT LANGUAGE
-// ════════════════════════════════
+// ── DETECT LANGUAGE ──
 let detectSR=null;
 function startDetect(){
   show('sd');
@@ -1147,22 +555,17 @@ function listenDetect(){
   if(!SR){toast('❌ Please use Google Chrome');return;}
   const sr=new SR();detectSR=sr;
   sr.lang='en-IN';sr.continuous=true;sr.interimResults=true;
-  const btn=document.getElementById('dmic'),hint=document.getElementById('dhint');
+  const btn=document.getElementById('dmic');
   btn.classList.add('on');setSoundwave(true);
   let final='',timer=null;
   sr.onresult=(e)=>{
-    let f='',i='';
-    for(let x=e.resultIndex;x<e.results.length;x++){
-      if(e.results[x].isFinal)f+=e.results[x][0].transcript;
-      else i+=e.results[x][0].transcript;
-    }
-    if(i){}
+    let f='';
+    for(let x=e.resultIndex;x<e.results.length;x++){if(e.results[x].isFinal)f+=e.results[x][0].transcript;}
     if(f){final+=' '+f;clearTimeout(timer);timer=setTimeout(()=>{try{sr.stop();}catch(e){}},1200);}
   };
   sr.onend=async()=>{
     btn.classList.remove('on');setSoundwave(false);clearTimeout(timer);
-    const t=final.trim();
-    if(!t){return;}
+    const t=final.trim();if(!t)return;
     await doDetect(t);
   };
   sr.onerror=()=>{btn.classList.remove('on');setSoundwave(false);};
@@ -1171,31 +574,21 @@ function listenDetect(){
 async function doDetect(transcript){
   overlay(true,'Detecting your language…');
   function detectLangLocal(text){
-    const te=(text.match(/[ఀ-౿]/g)||[]).length;
-    const hi=(text.match(/[ऀ-ॿ]/g)||[]).length;
-    const ta=(text.match(/[஀-௿]/g)||[]).length;
-    const ml=(text.match(/[ഀ-ൿ]/g)||[]).length;
-    const max=Math.max(te,hi,ta,ml);
-    if(max===0)return null;
-    if(te===max)return 'Telugu';
-    if(hi===max)return 'Hindi';
-    if(ta===max)return 'Tamil';
-    if(ml===max)return 'Malayalam';
-    return null;
+    const te=(text.match(/[ఀ-౿]/g)||[]).length;const hi=(text.match(/[ऀ-ॿ]/g)||[]).length;
+    const ta=(text.match(/[஀-௿]/g)||[]).length;const ml=(text.match(/[ഀ-ൿ]/g)||[]).length;
+    const max=Math.max(te,hi,ta,ml);if(max===0)return null;
+    if(te===max)return 'Telugu';if(hi===max)return 'Hindi';if(ta===max)return 'Tamil';if(ml===max)return 'Malayalam';return null;
   }
   function detectLangFromWords(text){
-    const t=text.toLowerCase();
-    const scores={Telugu:0,Hindi:0,Tamil:0,Malayalam:0,English:0};
-    ['naa','mee','nenu','meeru','okati','rendu','jwaram','noppi','vayasu','peru','kadupu','gunde','cheppandi','ledhu','undi','ayindi','chestanu'].forEach(w=>{if(t.includes(w))scores.Telugu+=2;});
-    ['mera','meri','naam','umar','main','hoon','hai','nahi','dard','bukhar','mujhe','aapka','bolo','kya','pet','sar','kamar'].forEach(w=>{if(t.includes(w))scores.Hindi+=2;});
-    ['enakku','ennoda','peyar','vayasu','naan','irukku','vali','kaichal','vandhen','sollunga','enna','romba'].forEach(w=>{if(t.includes(w))scores.Tamil+=2;});
-    ['entey','ente','peru','vayassu','njaan','aanu','veda','pani','paranju','parayoo','entha'].forEach(w=>{if(t.includes(w))scores.Malayalam+=2;});
-    const best=Object.entries(scores).sort((a,b)=>b[1]-a[1])[0];
-    return best[1]>=2?best[0]:null;
+    const t=text.toLowerCase();const scores={Telugu:0,Hindi:0,Tamil:0,Malayalam:0,English:0};
+    ['naa','mee','nenu','meeru','okati','rendu','jwaram','noppi','vayasu','peru','kadupu','gunde'].forEach(w=>{if(t.includes(w))scores.Telugu+=2;});
+    ['mera','meri','naam','umar','main','hoon','hai','nahi','dard','bukhar','mujhe'].forEach(w=>{if(t.includes(w))scores.Hindi+=2;});
+    ['enakku','ennoda','peyar','vayasu','naan','irukku','vali','kaichal'].forEach(w=>{if(t.includes(w))scores.Tamil+=2;});
+    ['entey','ente','peru','vayassu','njaan','aanu','veda','pani'].forEach(w=>{if(t.includes(w))scores.Malayalam+=2;});
+    const best=Object.entries(scores).sort((a,b)=>b[1]-a[1])[0];return best[1]>=2?best[0]:null;
   }
   function applyLang(lang){
-    overlay(false);
-    S.lang=lang;
+    overlay(false);S.lang=lang;
     const pm={English:'lp-en',Hindi:'lp-hi',Telugu:'lp-te',Tamil:'lp-ta',Malayalam:'lp-ml'};
     document.querySelectorAll('.lpill').forEach(p=>p.classList.remove('on'));
     document.getElementById(pm[S.lang])?.classList.add('on');
@@ -1206,96 +599,61 @@ async function doDetect(transcript){
   if(local){applyLang(local);return;}
   try{
     const res=await fetch(BACKEND+'/detect-language',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transcript})});
-    const d=await res.json();
-    applyLang(d.language||'English');
+    const d=await res.json();applyLang(d.language||'English');
   }catch(e){overlay(false);toast('❌ Backend error — is Flask running?');}
 }
 
-// ════════════════════════════════
-//  INTAKE
-// ════════════════════════════════
+// ── INTAKE ──
 function startIntake(){
-  show('si');
-  S.step=0;
+  show('si');S.step=0;
   document.getElementById('chat').innerHTML='';
-  updateProgress(0);
-  setTimeout(()=>askStep(0),300);
+  updateProgress(0);setTimeout(()=>askStep(0),300);
 }
 
+// FIX: Double question prevention with both _stepLock and _stepRunning
 let _stepLock=-1;
+let _stepRunning=false;
 function askStep(idx){
-  if(idx>=KEYS.length){_stepLock=-1;showConfirm();return;}
-  if(_stepLock===idx)return; // prevent duplicate for same step
-  _stepLock=idx;
+  if(idx>=KEYS.length){_stepLock=-1;_stepRunning=false;showConfirm();return;}
+  if(_stepLock===idx && _stepRunning)return; // ← prevents double question
+  _stepLock=idx;_stepRunning=true;
   S.step=idx;
-  stepUI(idx,'active');
-  updateProgress(idx);
-  const key=KEYS[idx];
-  const q=ph().q[idx];
+  stepUI(idx,'active');updateProgress(idx);
+  const key=KEYS[idx];const q=ph().q[idx];
   document.getElementById('mobBar').className='mobbar'+(key==='mobile'?' show':'');
   document.getElementById('keypad').className='keypad-wrap'+(key==='mobile'?' show':'');
   document.getElementById('mbtn').style.display=(key==='mobile'?'none':'');
   const mstatEl=document.getElementById('mstat');
-  if(key==='mobile'){
-    mobileDigits='';updateMobBar();
-    mstatEl.className='mstat';
-    mstatEl.textContent='⌨️ Use keypad below';
-  }
-  botMsg(SICOS[idx]+' '+q);
-  micReady();
-  speak(q, S.lang, ()=>{
-    if(S.step===idx && key!=='mobile'){
-      setTimeout(()=>{ startListen(idx); }, 800);
-    } else if(key==='mobile'){
-      mstatEl.className='mstat';
-      mstatEl.textContent='⌨️ Use keypad below';
-    }
+  if(key==='mobile'){mobileDigits='';updateMobBar();mstatEl.className='mstat';mstatEl.textContent='⌨️ Use keypad below';}
+  botMsg(SICOS[idx]+' '+q);micReady();
+  speak(q,S.lang,()=>{
+    if(S.step===idx && key!=='mobile'){setTimeout(()=>{startListen(idx);},800);}
+    else if(key==='mobile'){mstatEl.className='mstat';mstatEl.textContent='⌨️ Use keypad below';}
   });
 }
 
-function reaskStep(idx){
-  S[KEYS[idx]]='';
-  show('si');
-  botMsg('✏️ Re-entering: <b>'+KEYS[idx]+'</b>');
-  askStep(idx);
-}
+function reaskStep(idx){S[KEYS[idx]]='';show('si');botMsg('✏️ Re-entering: <b>'+KEYS[idx]+'</b>');askStep(idx);}
+function goBackToIntake(){show('si');let lastIdx=0;for(let i=0;i<KEYS.length;i++){if(S[KEYS[i]])lastIdx=i+1;}lastIdx=Math.min(lastIdx,KEYS.length-1);askStep(lastIdx);}
 
-function goBackToIntake(){
-  show('si');
-  let lastIdx=0;
-  for(let i=0;i<KEYS.length;i++){if(S[KEYS[i]])lastIdx=i+1;}
-  lastIdx=Math.min(lastIdx,KEYS.length-1);
-  askStep(lastIdx);
-}
-
-// ── CONFIRM SCREEN ──
 function showConfirm(){
   const p=ph();
   document.getElementById('confirm-title').textContent=p.confirm_title;
   document.getElementById('confirm-sub').textContent=p.confirm_sub;
   document.getElementById('confirm-lang-msg').textContent=p.confirm_msg;
   document.getElementById('confirmBtn').textContent='✅ '+p.confirm_btn;
-  const rows=document.getElementById('confirmRows');
-  rows.innerHTML='';
+  const rows=document.getElementById('confirmRows');rows.innerHTML='';
   const vals=[S.name,S.age,S.mobile,S.symptoms,S.days];
   KEYS.forEach((key,i)=>{
     const div=document.createElement('div');div.className='crow';
-    div.innerHTML='<div><div class="crow-l">'+p.labels[i]+'</div><div class="crow-v">'+(vals[i]||'—')+'</div></div>'
-      +'<button class="crow-edit" onclick="reaskStep('+i+')">✏️ Edit</button>';
+    div.innerHTML='<div><div class="crow-l">'+p.labels[i]+'</div><div class="crow-v">'+(vals[i]||'—')+'</div></div><button class="crow-edit" onclick="reaskStep('+i+')">✏️ Edit</button>';
     rows.appendChild(div);
   });
-  show('sc');
-  speak(p.confirm_msg, S.lang, null);
+  show('sc');speak(p.confirm_msg,S.lang,null);
 }
-
 document.getElementById('confirmBtn').addEventListener('click',()=>finalize());
 
-// ════════════════════════════════
-//  LISTENING
-// ════════════════════════════════
-let curSR=null;
-let mobileDigits='';
-
+// ── LISTENING ──
+let curSR=null;let mobileDigits='';
 document.getElementById('mbtn').addEventListener('click',()=>{
   stopAudio();
   if(curSR){try{curSR.abort();}catch(e){}curSR=null;}
@@ -1304,95 +662,59 @@ document.getElementById('mbtn').addEventListener('click',()=>{
 
 let _listenLock=false;
 function startListen(idx){
-  if(_listenLock){return;} // prevent double listen
+  if(_listenLock)return;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){toast('❌ Please use Google Chrome');return;}
   const key=KEYS[idx];
-  if(key==='mobile'){
-    const mstatEl=document.getElementById('mstat');
-    mstatEl.className='mstat';
-    mstatEl.textContent='⌨️ Use keypad below';
-    return;
-  }
+  if(key==='mobile'){const mstatEl=document.getElementById('mstat');mstatEl.className='mstat';mstatEl.textContent='⌨️ Use keypad below';return;}
   _listenLock=true;
   const sr=new SR();curSR=sr;
   const SR_LANG={'English':'en-IN','Hindi':'hi-IN','Telugu':'te-IN','Tamil':'ta-IN','Malayalam':'ml-IN'};
   sr.lang=SR_LANG[S.lang]||'en-IN';
-  sr.continuous=false;
-  sr.interimResults=false;
-  sr.maxAlternatives=3;
+  sr.continuous=false;sr.interimResults=false;sr.maxAlternatives=3;
   micOn();
   let done=false;
   function finish(t){
     if(done)return;done=true;curSR=null;_listenLock=false;
     micBusy();
-    if(!t){
-      botMsg('🔁 '+ph().retry);
-      speak(ph().retry,S.lang,null);
-      micReady();
-      return;
-    }
+    if(!t){botMsg('🔁 '+ph().retry);speak(ph().retry,S.lang,null);micReady();return;}
     userMsg(t);
     if(key==='mobile')handleMob(idx,t);
     else processAns(idx,t);
   }
-  sr.onresult=(e)=>{
-    let best='';
-    for(let i=0;i<e.results.length;i++)
-      for(let j=0;j<e.results[i].length;j++)
-        if(e.results[i][j].transcript.length>best.length) best=e.results[i][j].transcript;
-    finish(best.trim());
-  };
+  sr.onresult=(e)=>{let best='';for(let i=0;i<e.results.length;i++)for(let j=0;j<e.results[i].length;j++)if(e.results[i][j].transcript.length>best.length)best=e.results[i][j].transcript;finish(best.trim());};
   sr.onend=()=>{if(!done)finish('');};
   sr.onerror=(e)=>{if(e.error!=='aborted')finish('');};
   setTimeout(()=>{if(!done){try{sr.stop();}catch(e){}}},10000);
-  try{sr.start();}
-  catch(e){micReady();toast('Tap mic to try again');}
+  try{sr.start();}catch(e){micReady();toast('Tap mic to try again');}
 }
 
-function updateMobBar(){
-  document.getElementById('mobBar').textContent=mobileDigits.padEnd(10,'_').split('').join(' ');
-}
+function updateMobBar(){document.getElementById('mobBar').textContent=mobileDigits.padEnd(10,'_').split('').join(' ');}
 function handleMob(idx,t){
-  mobileDigits=(mobileDigits+digits(t)).slice(0,10);
-  updateMobBar();
+  mobileDigits=(mobileDigits+digits(t)).slice(0,10);updateMobBar();
   if(mobileDigits.length>=10){accept(idx,mobileDigits);return;}
   if(mobileDigits.length>=5){
     const need=10-mobileDigits.length;
     botMsg('📱 '+mobileDigits+' — '+need+' more digits needed');
-    const moreMsg={
-      Telugu:'ఇంకా '+need+' అంకెలు చెప్పండి.',
-      Hindi:need+' अंक और बोलें।',
-      Tamil:need+' இலக்கங்கள் மேலும் சொல்லுங்கள்.',
-      Malayalam:need+' അക്കങ്ങൾ കൂടി പറയൂ.',
-      English:'Please say '+need+' more digits.'
-    }[S.lang]||'Please say '+need+' more digits.';
-    speak(moreMsg,S.lang,null);
-    micReady();
-  } else {
-    botMsg('🔁 '+ph().retry);speak(ph().retry,S.lang,null);micReady();
-  }
+    const moreMsg={Telugu:'ఇంకా '+need+' అంకెలు చెప్పండి.',Hindi:need+' अंक और बोलें।',Tamil:need+' இலக்கங்கள் மேலும் சொல்லுங்கள்.',Malayalam:need+' അക്കങ്ങൾ കൂടി പറയൂ.',English:'Please say '+need+' more digits.'}[S.lang]||'Please say '+need+' more digits.';
+    speak(moreMsg,S.lang,null);micReady();
+  }else{botMsg('🔁 '+ph().retry);speak(ph().retry,S.lang,null);micReady();}
 }
 
 async function processAns(idx,transcript){
   botMsg('',true);overlay(true,'Processing…');
   try{
     const res=await fetch(BACKEND+'/extract',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({field:KEYS[idx],transcript,lang:S.lang})});
-    const d=await res.json();
-    rmTyping();overlay(false);
+    const d=await res.json();rmTyping();overlay(false);
     const val=(d.extracted||'').trim();
     if(!val||val.toLowerCase()==='unknown'||val==='No medical keywords found.'||val==='No duration found.'){
-      botMsg('🔁 '+ph().retry);
-      speak(ph().retry,S.lang,null);
-      micReady();
-      return;
+      botMsg('🔁 '+ph().retry);speak(ph().retry,S.lang,null);micReady();return;
     }
     accept(idx,val);
-  }catch(e){rmTyping();overlay(false);toast('❌ Server busy — please try again');
-        setTimeout(()=>{ micReady(); }, 1500);micReady();}
+  }catch(e){rmTyping();overlay(false);toast('❌ Server busy — please try again');setTimeout(()=>{micReady();},1500);}
 }
 
-const CLANG = {
+const CLANG={
   name:{Telugu:'మీ పేరు నమోదు చేశాం',Hindi:'नाम दर्ज किया',Tamil:'பெயர் பதிவு',Malayalam:'പേര് കുറിച്ചു',English:'Name recorded'},
   age:{Telugu:'వయసు నమోదు చేశాం',Hindi:'उम्र दर्ज की',Tamil:'வயது பதிவு',Malayalam:'പ്രായം കുറിച്ചു',English:'Age recorded'},
   mobile:{Telugu:'మొబైల్ నంబర్ నమోదు చేశాం',Hindi:'मोबाइल नंबर दर्ज किया',Tamil:'மொபைல் பதிவு',Malayalam:'മൊബൈൽ കുറിച്ചു',English:'Mobile recorded'},
@@ -1401,85 +723,49 @@ const CLANG = {
 };
 
 function accept(idx,val){
-  const key=KEYS[idx];
-  S[key]=val;
-  rmTyping();
+  const key=KEYS[idx];S[key]=val;rmTyping();
   const cm=(CLANG[key]||{})[S.lang]||(CLANG[key]||{})['English']||'Recorded';
-  if(key==='mobile'){
-    botMsg('✅ '+cm);
-    speak(cm, S.lang, ()=>{ stepUI(idx,'done'); _stepLock=-1; askStep(idx+1); });
-  } else if(key==='symptoms'){
-    botMsg('✅ <span style="font-size:12px;color:var(--text2)">'+val+'</span><br><b>'+cm+'</b>');
-    speak(cm, S.lang, ()=>{ stepUI(idx,'done'); _stepLock=-1; askStep(idx+1); });
-  } else {
-    botMsg('✅ '+val+'<br><span style="font-size:12px;color:var(--text2)">'+cm+'</span>');
-    speak(cm+'. '+val, S.lang, ()=>{ stepUI(idx,'done'); _stepLock=-1; askStep(idx+1); });
-  }
+  const next=()=>{stepUI(idx,'done');_stepLock=-1;_stepRunning=false;askStep(idx+1);};
+  if(key==='mobile'){botMsg('✅ '+cm);speak(cm,S.lang,next);}
+  else if(key==='symptoms'){botMsg('✅ <span style="font-size:12px;color:var(--text2)">'+val+'</span><br><b>'+cm+'</b>');speak(cm,S.lang,next);}
+  else{botMsg('✅ '+val+'<br><span style="font-size:12px;color:var(--text2)">'+cm+'</span>');speak(cm+'. '+val,S.lang,next);}
   document.getElementById('mobBar').className='mobbar';
   document.getElementById('keypad').className='keypad-wrap';
   document.getElementById('mbtn').style.display='';
 }
 
-// ════════════════════════════════
-//  FINALIZE
-// ════════════════════════════════
 async function finalize(){
   overlay(true,'Mapping department…');
   try{
     const res=await fetch(BACKEND+'/process',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({name:S.name,age:S.age,mobile:S.mobile,symptoms:S.symptoms,days:S.days,language:S.lang,emergency:S.emergency})});
-    const d=await res.json();
-    overlay(false);
-    Object.assign(S,{department:d.department,floor:d.floor,floorWord:d.floorWord,
-      doctor:d.doctor,keywords:d.keywords,emergency:d.emergency,reg:d.registration_number,
-      all_departments:d.all_departments||[]});
+    const d=await res.json();overlay(false);
+    Object.assign(S,{department:d.department,floor:d.floor,floorWord:d.floorWord,doctor:d.doctor,keywords:d.keywords,emergency:d.emergency,reg:d.registration_number,all_departments:d.all_departments||[]});
     if(S.emergency){
       show('se');
-      const em={Telugu:'అత్యవసరం! గ్రౌండ్ ఫ్లోర్ కి వెళ్ళండి.',Hindi:'आपातकाल! ग्राउंड फ्लोर पर जाएं।',
-        Tamil:'அவசரநிலை! கீழ் தளத்திற்கு செல்லுங்கள்.',Malayalam:'അടിയന്തരം! ഗ്രൗണ്ട് ഫ്ലോറിലേക്ക് പോകൂ.',
-        English:'Emergency! Go to Ground Floor immediately.'}[S.lang]||'Emergency!';
-      speak(em,S.lang,null);
-      setTimeout(()=>{show('sr2');fillReceipt();},7000);
+      const em={Telugu:'అత్యవసరం! గ్రౌండ్ ఫ్లోర్ కి వెళ్ళండి.',Hindi:'आपातकाल! ग्राउंड फ्लोर पर जाएं।',Tamil:'அவசரநிலை! கீழ் தளத்திற்கு செல்லுங்கள்.',Malayalam:'അടിയന്തരം! ഗ്രൗണ്ട് ഫ്ലോറിലേക്ക് പോകൂ.',English:'Emergency! Go to Ground Floor immediately.'}[S.lang]||'Emergency!';
+      speak(em,S.lang,null);setTimeout(()=>{show('sr2');fillReceipt();},7000);
     }else{
-      const msg=ph().floor_msg+S.floor;
-      show('sr2');
-      fillReceipt();
-      speak(msg,S.lang,null);
+      const msg=ph().floor_msg+S.floor;show('sr2');fillReceipt();speak(msg,S.lang,null);
     }
-  }catch(e){
-    overlay(false);
-    // Show retry button instead of just error
-    toast('❌ Connection issue — tap mic and try again');
-    micReady();
-  }
+  }catch(e){overlay(false);toast('❌ Connection issue — tap mic and try again');micReady();}
 }
 
-// ── RECEIPT ──
 function fillReceipt(){
   const d=new Date();
   const reg=S.reg||'VBT-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'-'+String(Math.floor(Math.random()*900)+100);
-  // Token number — random between 1-99 for demo
-  const token = 'T-' + String(Math.floor(Math.random()*98)+1).padStart(2,'0');
+  const token='T-'+String(Math.floor(Math.random()*98)+1).padStart(2,'0');
   document.getElementById('r-reg').textContent=reg;
   document.getElementById('r-token').textContent=token;
-  document.getElementById('r-wait').textContent='Show this token at the department counter';
   document.getElementById('r-dept').textContent=S.department||'—';
   document.getElementById('r-doc').textContent=S.doctor||'—';
-  // Show additional departments if multiple
   const multiEl=document.getElementById('r-multidept');
   const multiList=document.getElementById('r-multidept-list');
-  const others=(S.all_departments||[]).filter(d=>d.name!==S.department && d.name!=='Emergency');
+  const others=(S.all_departments||[]).filter(x=>x.name!==S.department&&x.name!=='Emergency');
   if(others.length>0){
-    multiList.innerHTML=others.map(function(d){
-      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #e0e7ff;font-size:13px;">'
-        +'<span style="font-weight:600;color:#1e293b;">🏥 '+d.name+'</span>'
-        +'<span style="color:#64748b;">Floor '+d.floor+' &middot; '+d.doctor+'</span>'
-        +'</div>';
-    }).join('');
+    multiList.innerHTML=others.map(function(x){return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e0e7ff;font-size:13px;"><span style="font-weight:600;color:#1e293b;">🏥 '+x.name+'</span><span style="color:#64748b;">Floor '+x.floor+' · '+x.doctor+'</span></div>';}).join('');
     multiEl.style.display='block';
-  }else{
-    multiEl.style.display='none';
-  }
+  }else{multiEl.style.display='none';}
   document.getElementById('r-fl').textContent=S.floor;
   document.getElementById('r-flw').textContent=S.floorWord||'—';
   document.getElementById('r-name').textContent=S.name||'—';
@@ -1495,199 +781,84 @@ function fillReceipt(){
   (S.keywords||[]).forEach(k=>{const sp=document.createElement('span');sp.className='spill';sp.textContent=k;sw.appendChild(sp);});
 }
 
-// ── PRINT / DOWNLOAD ──
 let cdTimer,cdDone=false;
 function doPrint(){window.print();toast('🖨️ Sent to printer');setTimeout(startCD,1500);}
 function doDownload(){
   const html='<!DOCTYPE html><html><head><meta charset="UTF-8"/></head><body>'+document.getElementById('rcard').outerHTML+'</body></html>';
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));
-  a.download='VoiceByte-'+document.getElementById('r-reg').textContent+'.html';
-  a.click();toast('⬇️ Downloaded!');setTimeout(startCD,1500);
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download='VoiceByte-'+document.getElementById('r-reg').textContent+'.html';a.click();toast('⬇️ Downloaded!');setTimeout(startCD,1500);
 }
 function startCD(){
   if(cdDone)return;cdDone=true;let s=10;
-  document.getElementById('cdmsg').textContent='Session expiring in';
-  document.getElementById('cdnum').textContent=s+'s';
-  document.getElementById('cdf').style.width='100%';
-  clearInterval(cdTimer);
-  cdTimer=setInterval(()=>{s--;document.getElementById('cdnum').textContent=s+'s';document.getElementById('cdf').style.width=(s/10*100)+'%';if(s<=0){clearInterval(cdTimer);resetAll();}},1000);
+  document.getElementById('cdmsg').textContent='Session expiring in';document.getElementById('cdnum').textContent=s+'s';document.getElementById('cdf').style.width='100%';
+  clearInterval(cdTimer);cdTimer=setInterval(()=>{s--;document.getElementById('cdnum').textContent=s+'s';document.getElementById('cdf').style.width=(s/10*100)+'%';if(s<=0){clearInterval(cdTimer);resetAll();}},1000);
 }
 
-// ── RESET ──
 function resetAll(){
   clearInterval(cdTimer);cdDone=false;stopAudio();
   if(curSR){try{curSR.abort();}catch(e){}curSR=null;}
+  _stepLock=-1;_stepRunning=false;_listenLock=false;
   Object.assign(S,{lang:'English',step:0,name:'',age:'',mobile:'',symptoms:'',days:'',department:'',floor:1,floorWord:'',doctor:'',keywords:[],emergency:false,reg:'',all_departments:[]});
-  mobileDigits='';
-  document.getElementById('chat').innerHTML='';
-  document.getElementById('langLbl').textContent='English';
+  mobileDigits='';document.getElementById('chat').innerHTML='';document.getElementById('langLbl').textContent='English';
   document.querySelectorAll('.lpill').forEach(p=>p.classList.remove('on'));
   const icons=['👤','🎂','📱','🏥','📅'];
-  for(let i=1;i<=5;i++){
-    const el=document.getElementById('si-'+i);
-    el.className='si-el'+(i===1?' active':'');
-    el.querySelector('.sico').textContent=icons[i-1];
-    el.style.cursor='';el.onclick=null;
-  }
-  document.getElementById('mobBar').className='mobbar';
-  updateProgress(0);
-  show('sw');
+  for(let i=1;i<=5;i++){const el=document.getElementById('si-'+i);el.className='si-el'+(i===1?' active':'');el.querySelector('.sico').textContent=icons[i-1];el.style.cursor='';el.onclick=null;}
+  document.getElementById('mobBar').className='mobbar';updateProgress(0);show('sw');
 }
 
-// Pre-load voices immediately on page load
-if(window.speechSynthesis){
-  window.speechSynthesis.getVoices();
-  window.speechSynthesis.onvoiceschanged = function(){
-    window.speechSynthesis.getVoices(); // ensure voices loaded
-  };
-}
+// Voices preload
+if(window.speechSynthesis){window.speechSynthesis.getVoices();window.speechSynthesis.onvoiceschanged=function(){window.speechSynthesis.getVoices();};}
 
 document.getElementById('startBtn').addEventListener('click', function(){
-  // Warm up SpeechSynthesis on first user tap
-  if(window.speechSynthesis){
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.getVoices();
-  }
+  if(window.speechSynthesis){window.speechSynthesis.cancel();window.speechSynthesis.getVoices();}
   startDetect();
 });
 
-// Ping backend on load — shows splash if Render is waking up
+// Backend health ping (Render cold start splash)
 (async function pingBackend(){
   const splash=document.createElement('div');
   splash.id='renderSplash';
-  Object.assign(splash.style,{display:'none',position:'fixed',inset:'0',zIndex:'9999',
-    background:'#0F2137',flexDirection:'column',alignItems:'center',justifyContent:'center',
-    gap:'18px',fontFamily:'sans-serif'});
-  splash.innerHTML=`<div style="font-size:56px">🏥</div>
-    <div style="font-size:26px;font-weight:800;color:#fff"><span style="color:#93C5FD">Voice</span>Byte</div>
-    <div style="color:rgba(255,255,255,0.7);font-size:15px">Starting up, please wait…</div>
-    <div style="width:180px;height:4px;background:rgba(255,255,255,0.15);border-radius:4px;overflow:hidden">
-      <div id="splashBar" style="height:100%;width:0%;background:#3B82F6;border-radius:4px;transition:width 0.4s"></div></div>
-    <div id="splashMsg" style="color:rgba(255,255,255,0.4);font-size:12px">Connecting…</div>`;
+  Object.assign(splash.style,{display:'none',position:'fixed',inset:'0',zIndex:'9999',background:'#0F2137',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'18px',fontFamily:'sans-serif'});
+  splash.innerHTML='<div style="font-size:56px">🏥</div><div style="font-size:26px;font-weight:800;color:#fff"><span style="color:#93C5FD">Voice</span>Byte</div><div style="color:rgba(255,255,255,0.7);font-size:15px">Starting up, please wait…</div><div style="width:180px;height:4px;background:rgba(255,255,255,0.15);border-radius:4px;overflow:hidden"><div id="splashBar" style="height:100%;width:0%;background:#3B82F6;border-radius:4px;transition:width 0.4s"></div></div><div id="splashMsg" style="color:rgba(255,255,255,0.4);font-size:12px">Connecting…</div>';
   document.body.appendChild(splash);
-  let pct=0;
-  const tick=setInterval(()=>{pct=Math.min(pct+3,88);document.getElementById('splashBar').style.width=pct+'%';},600);
-  const slowTimer=setTimeout(()=>{
-    splash.style.display='flex';
-    document.getElementById('splashMsg').textContent='Free server waking up (may take 30-50s)…';
-  },3000);
-  try{
-    await fetch(BACKEND+'/health',{cache:'no-store'});
-    clearTimeout(slowTimer);clearInterval(tick);
-    document.getElementById('splashBar').style.width='100%';
-    setTimeout(()=>{splash.style.display='none';},400);
-  }catch(e){
-    clearInterval(tick);
-    if(splash.style.display==='flex')
-      document.getElementById('splashMsg').textContent='Cannot reach server. Check Flask is running.';
-  }
+  let pct=0;const tick=setInterval(()=>{pct=Math.min(pct+3,88);document.getElementById('splashBar').style.width=pct+'%';},600);
+  const slowTimer=setTimeout(()=>{splash.style.display='flex';document.getElementById('splashMsg').textContent='Free server waking up (may take 30-50s)…';},3000);
+  try{await fetch(BACKEND+'/health',{cache:'no-store'});clearTimeout(slowTimer);clearInterval(tick);document.getElementById('splashBar').style.width='100%';setTimeout(()=>{splash.style.display='none';},400);}
+  catch(e){clearInterval(tick);if(splash.style.display==='flex')document.getElementById('splashMsg').textContent='Cannot reach server. Check Flask is running.';}
 })();
 
-// ── NUMBER KEYPAD ──
-function kp(digit){
-  if(mobileDigits.length>=10) return;
-  mobileDigits+=digit;
-  updateMobBar();
-}
-function kpDel(){
-  mobileDigits=mobileDigits.slice(0,-1);
-  updateMobBar();
-}
+// Keypad
+function kp(digit){if(mobileDigits.length>=10)return;mobileDigits+=digit;updateMobBar();}
+function kpDel(){mobileDigits=mobileDigits.slice(0,-1);updateMobBar();}
 function kpOk(){
-  if(mobileDigits.length<7){
-    const msg={Telugu:'10 అంకెలు పూర్తిగా నమోదు చేయండి',Hindi:'10 अंक दर्ज करें',
-      Tamil:'10 இலக்கங்கள் உள்ளிடுங்கள்',Malayalam:'10 അക്കങ്ങൾ നൽകൂ',
-      English:'Please enter at least 7 digits'}[S.lang]||'Please enter at least 7 digits';
-    toast(msg); return;
-  }
-  userMsg(mobileDigits);
-  accept(S.step, mobileDigits);
+  if(mobileDigits.length<7){const msg={Telugu:'10 అంకెలు పూర్తిగా నమోదు చేయండి',Hindi:'10 अंक दर्ज करें',Tamil:'10 இலக்கங்கள் உள்ளிடுங்கள்',Malayalam:'10 അക്കങ്ങൾ നൽകൂ',English:'Please enter at least 7 digits'}[S.lang]||'Please enter at least 7 digits';toast(msg);return;}
+  userMsg(mobileDigits);accept(S.step,mobileDigits);
 }
 
-// ═══════════════════════════════
-//  IDLE DETECTION — 30 seconds
-// ═══════════════════════════════
-const IDLE_SEC = 30;
-let idleTimer = null;
-let idleLangTimer = null;
-
-const IDLE_MSGS = [
-  { lang:'English',  msg:'Touch the button to register' },
-  { lang:'हिंदी',    msg:'पंजीकरण के लिए बटन दबाएं' },
-  { lang:'తెలుగు',  msg:'నమోదు చేయడానికి బటన్ నొక్కండి' },
-  { lang:'தமிழ்',   msg:'பதிவு செய்ய பொத்தானை தொடுங்கள்' },
-  { lang:'മലയാളം', msg:'രജിസ്ട്രേഷനായി ബട്ടൺ അമർത്തൂ' },
-];
-
-// Start idle timer only after user has interacted at least once (or after 30s on welcome)
-// Don't show idle on first page load — give patient time to read
-let hasInteracted = false;
-
-function resetIdleTimer(){
-  clearTimeout(idleTimer);
-  if(document.getElementById('sw').classList.contains('active') && hasInteracted){
-    idleTimer = setTimeout(showIdle, IDLE_SEC * 1000);
-  }
-}
-
-// Mark first interaction
-document.addEventListener('click', ()=>{ hasInteracted=true; resetIdleTimer(); }, {once:true});
-document.addEventListener('touchstart', ()=>{ hasInteracted=true; resetIdleTimer(); }, {once:true, passive:true});
-
-// After 30s on welcome even without interaction — show idle
-setTimeout(()=>{ hasInteracted=true; resetIdleTimer(); }, IDLE_SEC * 1000);
-
+// Idle detection
+const IDLE_SEC=30;let idleTimer=null;let idleLangTimer=null;
+const IDLE_MSGS=[{lang:'English',msg:'Touch the button to register'},{lang:'हिंदी',msg:'पंजीकरण के लिए बटन दबाएं'},{lang:'తెలుగు',msg:'నమోదు చేయడానికి బటన్ నొక్కండి'},{lang:'தமிழ்',msg:'பதிவு செய்ய பொத்தானை தொடுங்கள்'},{lang:'മലയാളം',msg:'രജിസ്ട്രേഷനായി ബട്ടൺ അമർത്തൂ'}];
+let hasInteracted=false;
+function resetIdleTimer(){clearTimeout(idleTimer);if(document.getElementById('sw').classList.contains('active')&&hasInteracted){idleTimer=setTimeout(showIdle,IDLE_SEC*1000);}}
+document.addEventListener('click',()=>{hasInteracted=true;resetIdleTimer();},{once:true});
+document.addEventListener('touchstart',()=>{hasInteracted=true;resetIdleTimer();},{once:true,passive:true});
+setTimeout(()=>{hasInteracted=true;resetIdleTimer();},IDLE_SEC*1000);
 function showIdle(){
-  document.getElementById('idle-overlay').style.display='flex';
-  let i=0;
-  clearInterval(idleLangTimer);
-  function rotate(){
-    const el=document.getElementById('idle-lang-msg');
-    el.style.opacity='0';
-    setTimeout(()=>{
-      el.textContent=IDLE_MSGS[i].lang+' — '+IDLE_MSGS[i].msg;
-      el.style.opacity='1';
-      i=(i+1)%IDLE_MSGS.length;
-    },400);
-  }
-  rotate();
-  idleLangTimer=setInterval(rotate,2500);
+  document.getElementById('idle-overlay').style.display='flex';let i=0;clearInterval(idleLangTimer);
+  function rotate(){const el=document.getElementById('idle-lang-msg');el.style.opacity='0';setTimeout(()=>{el.textContent=IDLE_MSGS[i].lang+' — '+IDLE_MSGS[i].msg;el.style.opacity='1';i=(i+1)%IDLE_MSGS.length;},400);}
+  rotate();idleLangTimer=setInterval(rotate,2500);
 }
-
-function dismissIdle(){
-  clearInterval(idleLangTimer);
-  document.getElementById('idle-overlay').style.display='none';
-  resetAll();
-  setTimeout(resetIdleTimer,500);
-}
-
-// Patch resetAll to restart idle when welcome screen shown
-const _baseResetAll = resetAll;
-resetAll = function(){
-  _baseResetAll();
-  setTimeout(resetIdleTimer, 500);
-};
-
-['click','touchstart','keydown'].forEach(ev=>{
-  document.addEventListener(ev,()=>{
-    hasInteracted = true;
-    if(document.getElementById('idle-overlay').style.display!=='flex') resetIdleTimer();
-  },{passive:true});
-});
-
-// Don't call resetIdleTimer() here — handled above with delay
+function dismissIdle(){clearInterval(idleLangTimer);document.getElementById('idle-overlay').style.display='none';resetAll();setTimeout(resetIdleTimer,500);}
+const _baseResetAll=resetAll;
+resetAll=function(){_baseResetAll();setTimeout(resetIdleTimer,500);};
+['click','touchstart','keydown'].forEach(ev=>{document.addEventListener(ev,()=>{hasInteracted=true;if(document.getElementById('idle-overlay').style.display!=='flex')resetIdleTimer();},{passive:true});});
 </script>
 
-<!-- IDLE OVERLAY -->
 <div id="idle-overlay" style="display:none;position:fixed;inset:0;z-index:500;background:linear-gradient(135deg,#0F2137,#1252A3);flex-direction:column;align-items:center;justify-content:center;gap:24px;text-align:center;padding:32px;">
   <div style="font-size:80px;animation:logo-float 3s ease-in-out infinite;">🏥</div>
-  <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:36px;font-weight:800;color:#fff;letter-spacing:-0.5px;">VoiceByte</div>
+  <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:36px;font-weight:800;color:#fff;">VoiceByte</div>
   <div style="font-size:15px;color:rgba(255,255,255,0.6);">AI-powered Hospital Registration</div>
   <div id="idle-lang-msg" style="font-size:20px;font-weight:600;color:#93C5FD;min-height:30px;transition:opacity .4s;"></div>
-  <button onclick="dismissIdle()" style="margin-top:12px;padding:20px 52px;border:none;border-radius:18px;background:#fff;color:#1252A3;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:18px;cursor:pointer;box-shadow:0 8px 32px rgba(0,0,0,0.3);transition:transform .2s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
-    🎤 &nbsp;Touch here to start
-  </button>
+  <button onclick="dismissIdle()" style="margin-top:12px;padding:20px 52px;border:none;border-radius:18px;background:#fff;color:#1252A3;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:18px;cursor:pointer;box-shadow:0 8px 32px rgba(0,0,0,0.3);">🎤 &nbsp;Touch here to start</button>
   <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:8px;">City General Hospital · Powered by VoiceByte AI</div>
 </div>
 
